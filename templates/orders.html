@@ -1,36 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Orders{% endblock title %}
 {% block body %}
-<hr>
+<hr class="border border-dark border-1 opacity-50">
+
 <div class="container-fluid">
-    <div class="container-fluid">
-        <p>Tables Views </p>
-        <hr>
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h4>Tables Views</h4>
+        <a class="btn btn-dark opacity-75" data-bs-toggle="collapse" href="#addtablebox" role="button">+ New Table</a>
     </div>
-    <div class="container">
-        
+    <hr class="border border-dark border-1 opacity-50">
+
+    <div class="container">        
     {% for item in items %}
         <div class="card d-inline-flex m-1">
             <div class="card-header">Table : {{item.table_no}}</div>
-            <div class="card-body">{{item.status}}</div>
+
+            {% if item.status == "A" %}
+                <div class="card-body text-success">{{item.get_status_display}}</div>
+            {% elif item.status == "O" %}
+                <div class="card-body text-danger">{{item.get_status_display}}</div>
+            {% endif %}
         </div>    
     {% endfor %}
     </div>
 </div>
 
+<div class="postion-relative collapse" id="addtablebox">
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    <div class="z-1 position-absolute bg-body-secondary border border-dark rounded-2 top-50 start-50">
+        <div class="container m-3">
+          <form method="POST">
+            {% csrf_token %}
+            <h3 class="text-dark">Add new Table</h3>
+            <input type="number" name="table_no" placeholder="enter table no" required></input>
+            <button class="btn btn-dark" type="submit" name="action" value="add_table">ADD</button>
+          </form>
+        </div>
+    </div>      
+</div>
 
 {% endblock body %}
