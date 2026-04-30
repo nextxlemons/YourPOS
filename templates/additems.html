@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Manage Items{% endblock title %}
+{% block body %}
+<hr class="border border-dark border-1 opacity-50">
+<div class="container-fluid">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h4>+Add New Items </h4>
+        <a class="btn btn-dark btn-outline-seconda opacity-75" href="/manageitems">Back</a>
+    </div>
+    <hr class="border border-dark border-1 opacity-50">
+    <div class="container my-5" style="max-width: 620px;">
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h4 class="form-label fw-semibold">Please enter details about item.</h4>
+                <hr class="border border-dark border-1 opacity-50">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Item Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Cappuccino" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Category</label>
+                    <select name="category" class="form-select" required>
+                        <option value="">-- Select Category --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="hasVariants" name="has_variants">
+                    <label class="form-check-label fw-semibold" for="hasVariants">Has size variants (S / L)</label>
+                </div>
+
+                <div class="mb-3" id="basePriceSection">
+                    <label class="form-label fw-semibold">Base Price (₹)</label>
+                    <input type="number" name="base_price" class="form-control" placeholder="0.00" step="0.01" min="0">
+                </div>                
+
+                <div class="mb-3 d-none" id="variantSection">
+                    <label class="form-label fw-semibold">Variants</label>
+                    <div class="d-flex gap-2 mb-2">
+                        <label class="form-label w-auto my-auto">Small</label>
+                        <input type="number" name="variant_price_s" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <label class="form-label w-auto my-auto">Large</label>
+                        <input type="number" name="variant_price_l" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="mb-4 form-check">
+                    <input type="checkbox" class="form-check-input" id="isActive" name="is_active" checked>
+                    <label class="form-check-label fw-semibold" for="isActive">Active</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary px-4">Save Item</button>
+                <a href="{% url 'manageitems' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+    </div>
+
+<script>
+    document.getElementById('hasVariants').addEventListener('change', function () {
+        document.getElementById('basePriceSection').classList.toggle('d-none', this.checked);
+        document.getElementById('variantSection').classList.toggle('d-none', !this.checked);
+    });
+</script>
+
+
+</div>
+
+
+{% endblock body %}

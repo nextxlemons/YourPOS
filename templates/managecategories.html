@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Manage Categories{% endblock title %}
+{% block body %}
+<hr class="border border-dark border-1 opacity-50">
+
+<div class="container-fluid">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h4>Manage Categories </h4>
+        <a class="btn btn-dark opacity-75" data-bs-toggle="collapse" href="#addtablebox" role="button">+ New Category</a>
+
+    </div>
+    <hr class="border border-dark border-1 opacity-50">
+    <div class="container my-4 mx-auto">
+    <table class="table table-bordered border-dark table-striped">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Category Name</th>
+                <th scope="col">Status</th>
+                <th scope="col">Operations</th>
+            </tr>
+        </thead>
+        <tbody class="table-group-divider">
+            {% for item in items %}
+            <tr>
+                <th scope="row">{{ forloop.counter }}</th>
+                <td>
+                    <span id="display-{{ item.name|slugify }}">{{ item.name }}</span>
+
+                    <form id="form-{{ item.name|slugify }}" method="POST" class="d-none">
+                        {% csrf_token %}
+                        <input type="hidden" name="old_name" value="{{ item.name }}">
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="new_name" value="{{ item.name }}" class="form-control">
+                            <button type="submit" name="action" value="rename_category" class="btn btn-success mx-2">Save</button>
+                        </div>
+                    </form>
+                </td>
+                <td>
+                    <span class="{% if item.is_active %}text-success{% else %}text-danger{% endif %}">
+                        {{ item.is_active|yesno:"Active,Inactive" }}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleEdit('{{ item.name|slugify }}')">Rename</button>
+                    
+                    <form method="POST" class="d-inline" onsubmit="return confirm('Delete {{ item.name }}?')">
+                        {% csrf_token %}
+                        <input type="hidden" name="category_name" value="{{ item.name }}">
+                        <button type="submit" name="action" value="delete_category" class="btn btn-sm btn-outline-danger ms-1">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function toggleEdit(slugName) {
+    // Hide text, show form
+    document.getElementById('display-' + slugName).classList.add('d-none');
+    const form = document.getElementById('form-' + slugName);
+    form.classList.remove('d-none');
+    form.classList.add('d-inline-flex');
+    
+    // Focus input
+    const input = form.querySelector('input[name="new_name"]');
+    input.focus();
+    input.select();
+}
+</script>
+
+</div>
+
+<div class="postion-relative collapse" id="addtablebox">
+
+    <div class="z-1 position-absolute bg-body-secondary border border-dark rounded-2 top-50 start-50">
+        <div class="container m-3">
+          <form method="POST">
+            {% csrf_token %}
+            <h3 class="text-dark">Add new Category</h3>
+            <input type="text" name="name" placeholder="enter category name" required></input>
+            <button class="btn btn-dark" type="submit" name="action" value="add_category">ADD</button>
+          </form>
+        </div>
+    </div>      
+</div>
+
+{% endblock body %}

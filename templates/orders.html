@@ -32,7 +32,7 @@
           <form method="POST">
             {% csrf_token %}
             <h3 class="text-dark">Add new Table</h3>
-            <input type="number" name="table_no" placeholder="enter table no" required></input>
+            <input type="number" name="table_no" placeholder="enter table no" min="0" required ></input>
             <button class="btn btn-dark" type="submit" name="action" value="add_table">ADD</button>
           </form>
         </div>
