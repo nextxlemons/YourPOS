@@ -10,9 +10,25 @@
     </div>
     <hr class="border border-dark border-1 opacity-50">
 
-    <div class="container">        
-    {% for item in items %}
-        <div class="card d-inline-flex m-1">
+    <div class="container">
+        <style>
+        .hover-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .hover-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+        .hover-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+        </style>
+        {% for item in items %}
+        <div class="card d-inline-flex m-1 hover-card">
+            <a href="/createorders/{{ item.pk }}">
             <div class="card-header">Table : {{item.table_no}}</div>
 
             {% if item.status == "A" %}
@@ -20,8 +36,9 @@
             {% elif item.status == "O" %}
                 <div class="card-body text-danger">{{item.get_status_display}}</div>
             {% endif %}
+            </a>
         </div>    
-    {% endfor %}
+        {% endfor %}
     </div>
 </div>
 

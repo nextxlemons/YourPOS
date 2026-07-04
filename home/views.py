@@ -1,11 +1,15 @@
 from django.shortcuts import redirect, render
 from django.db import models
+from django.http import JsonResponse
 
 from home.models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order
 
 # Create your views here.
 def index(request):
     return render(request,'index.html')
+
+def home(request):
+    return render(request, 'home.html')
 
 def orders(request):
     if request.method == "POST":
@@ -19,6 +23,28 @@ def orders(request):
     data = TableInfo.objects.all().order_by('table_no')
     # context = {'items': data} for context passing
     return render(request, 'orders.html', {'items': data})
+
+def createorders(request,id):
+    categories = MenuCategory.objects.filter(is_active=True)
+    return render(request, 'createorders.html', {'categories':categories})
+
+
+def category_items(request, id):
+    items = MenuItem.objects.filter(
+        category_id=id,
+        is_active=True
+    )
+
+    data = []
+
+    for item in items:
+        data.append({
+            "id": item.id,
+            "name": item.name,
+            "price": float(item.base_price)
+        })
+
+    return JsonResponse(data, safe=False)
 
 def reports(request):
     return render(request, 'reports.html')

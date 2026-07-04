@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock title %}
+
+{% block body %}
+
+<hr class="border border-dark border-1 opacity-50">
+
+<div class="container-fluid">
+
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h4>Table NO:</h4>
+        <a class="btn btn-dark opacity-75" href="{% url 'manageitems' %}">Back</a>
+    </div>
+
+    <hr class="border border-dark border-1 opacity-50">
+
+    <div class="row">
+
+        <!-- Category -->
+        <div class="col-2">
+
+            <h4>Category</h4>
+            
+
+            <table class="table table-secondary table-striped table-hover">
+                <tbody>
+                    <th>Category</th>
+                    {% for category in categories %}
+
+                    <tr class="category-row"
+                        data-id="{{ category.id }}"
+                        style="cursor:pointer;">
+                        <td>{{ category.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- Items -->
+        <div class="col-5">
+
+            <h4>Items</h4>
+            <style>
+            .hover-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                box-shadow: 0 5px 5px rgba(46, 46, 46, 0.15);
+                cursor: pointer;
+            }
+            .hover-card:hover {
+                transform: translateY(-5px) scale(1.02);
+                box-shadow: 0 10px 20px rgba(6, 118, 45, 0.15);
+                z-index: 10;
+            }
+            </style>
+
+            <div id="items-body" class="d-flex flex-wrap gap-2">
+            </div>
+
+        </div>
+   
+        <!-- Bill -->
+        <div class="col-5">
+
+            <h4>Bill</h4>
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+
+                <tbody id="bill">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+let bill = [];
+
+// Load Items
+
+document.querySelectorAll(".category-row").forEach(row => {
+
+    row.addEventListener("click", function () {
+
+        let id = this.dataset.id;
+
+        fetch(`/category/${id}/items/`)
+        .then(response => response.json())
+        .then(data => {
+
+            let tbody = document.getElementById("items-body");
+
+            tbody.innerHTML = "";
+
+            data.forEach(item => {
+
+                tbody.innerHTML += `
+                    <div class="card hover-card item-row m-1"
+                        data-name="${item.name}"
+                        data-price="${item.price}"
+                        style="width:25%; cursor:pointer;">
+
+                        <div class="card-header text-center fw-bold">
+                            ${item.name}
+                        </div>
+
+                        <div class="card-body text-center">
+                            <h5 class="text-success">₹${item.price}</h5>
+                        </div>
+                    </div>
+                    `;
+            });
+
+            addItemEvents();
+
+        });
+
+    });
+
+});
+
+
+
+// Add Item To Bill
+
+function addItemEvents(){
+
+    document.querySelectorAll(".item-row").forEach(row=>{
+
+        row.onclick=function(){
+
+            let name = this.dataset.name;
+            let price = parseFloat(this.dataset.price);
+
+            bill.push({
+                name:name,
+                price:price
+            });
+
+            renderBill();
+
+        }
+
+    });
+
+}
+
+
+// Render Bill
+
+function renderBill(){
+
+    let tbody = document.getElementById("bill");
+
+    tbody.innerHTML = "";
+
+    let total = 0;
+
+    bill.forEach(item=>{
+
+        total += item.price;
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.name}</td>
+                <td>₹${item.price.toFixed(2)}</td>
+            </tr>
+        `;
+
+    });
+
+    tbody.innerHTML += `
+        <tr class="table-primary">
+            <th>Total</th>
+            <th>₹${total.toFixed(2)}</th>
+        </tr>
+    `;
+
+}
+
+</script>
+
+{% endblock body %}
