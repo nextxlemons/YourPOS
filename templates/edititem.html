@@ -36,17 +36,17 @@
 
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="hasVariants" name="has_variants"
-                        {% if variants %}checked{% endif %}>
+                        {% if has_variants %}checked{% endif %}> 
                     <label class="form-check-label fw-semibold" for="hasVariants">Has size variants (S / L)</label>
                 </div>
 
-                <div class="mb-3 {% if variants %}d-none{% endif %}" id="basePriceSection">
-                    <label class="form-label fw-semibold">Base Price (₹)</label>
-                    <input type="number" name="base_price" class="form-control"
-                        value="{{ item.base_price }}" step="0.01" min="0">
+                <div class="mb-3 {% if has_variants %}d-none{% endif %}" id="defaultPriceSection">
+                    <label class="form-label fw-semibold">Default Price(₹)</label>
+                    <input type="number" name="variant_price_d" class="form-control"
+                        value="{{ variants.D }}" placeholder="Price (₹)" step="0.01" min="0">
                 </div>
 
-                <div class="mb-3 {% if not variants %}d-none{% endif %}" id="variantSection">
+                <div class="mb-3 {% if not has_variants %}d-none{% endif %}" id="variantSection">
                     <label class="form-label fw-semibold">Variants</label>
                     <div class="d-flex gap-2 mb-2">
                         <label class="form-label w-auto my-auto">Small</label>
@@ -77,7 +77,7 @@
 
 <script>
     document.getElementById('hasVariants').addEventListener('change', function () {
-        document.getElementById('basePriceSection').classList.toggle('d-none', this.checked);
+        document.getElementById('defaultPriceSection').classList.toggle('d-none', this.checked);
         document.getElementById('variantSection').classList.toggle('d-none', !this.checked);
     });
 </script>

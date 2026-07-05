@@ -38,7 +38,6 @@ class MenuItem(models.Model):
         related_name="items"
     )
     name = models.CharField(max_length=150, unique=True)
-    base_price = models.DecimalField(max_digits=8, decimal_places=2)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -47,18 +46,20 @@ class MenuItem(models.Model):
         return f"{self.name} - {self.category.name}"
 
 
-#  size of items Large or Small
+#  size of items Large or Small and default price of items
 class MenuVariant(models.Model):
     class Size(models.TextChoices):
+        DEFAULT = "D", "Default"
         SMALL = "S", "Small"
         LARGE = "L", "Large"
+        
 
     item = models.ForeignKey(
         MenuItem,
         on_delete=models.CASCADE,
         related_name="variants"
     )
-    size= models.CharField(max_length=5, choices=Size.choices)
+    size= models.CharField(max_length=10, choices=Size.choices)
     price = models.DecimalField(max_digits=8, decimal_places=2)
 
     class Meta:

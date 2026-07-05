@@ -209,11 +209,9 @@ def additems(request):
 
         category = MenuCategory.objects.get(id=category_id)
 
+        item = MenuItem.objects.create(name=name, category=category, is_active=is_active)
+
         if has_variants:
-            item = MenuItem.objects.create(
-                name=name, category=category,
-                base_price=0, is_active=is_active
-            )
             variant_price_s= request.POST.get('variant_price_s')
             variant_price_l= request.POST.get('variant_price_l')
 
@@ -224,11 +222,8 @@ def additems(request):
                 MenuVariant.objects.create(item=item,size="L",price=variant_price_l)
             
         else:
-            base_price = request.POST.get('base_price')
-            item = MenuItem.objects.create(
-                name=name, category=category,
-                base_price=base_price, is_active=is_active
-            )
+            variant_price_d = request.POST.get('variant_price_d')
+            MenuVariant.objects.create(item=item,size="D",price=variant_price_d)
 
         return redirect('manageitems')
 
@@ -244,25 +239,27 @@ def edititem(request, pk):
         item.category = MenuCategory.objects.get(id=request.POST.get('category'))
         item.is_active = request.POST.get('is_active') == 'on'
         has_variants = request.POST.get('has_variants') == 'on'
+        item.save()
 
-        if has_variants:
-            item.base_price = 0
-            item.save()
+        item.variants.all().delete()  # remove old variants if switched
+        if has_variants: # if has variants, create S and L variants
             price_s = request.POST.get('variant_price_s')
             price_l = request.POST.get('variant_price_l')
             MenuVariant.objects.update_or_create(item=item, size='S', defaults={'price': price_s}) if price_s else None
             MenuVariant.objects.update_or_create(item=item, size='L', defaults={'price': price_l}) if price_l else None
-        else:
-            item.base_price = request.POST.get('base_price')
-            item.save()
-            item.variants.all().delete()  # remove old variants if switched to flat price
+        else: # if no variants, create D variant
+            price_d = request.POST.get('variant_price_d')
+            MenuVariant.objects.update_or_create(item=item, size='D', defaults={'price': price_d}) if price_d else None
 
         return redirect('manageitems')
 
-    # pass existing variant prices to template
+    # pass prices to template
     variants = {v.size: v.price for v in item.variants.all()}
+    has_variants = item.variants.filter(size__in=['S', 'L']).exists()  # explicit flag
+
     return render(request, 'edititem.html', {
         'item': item,
         'categories': categories,
         'variants': variants,
+        'has_variants': has_variants,
     })
