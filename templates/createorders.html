@@ -2,195 +2,153 @@
 {% block title %}Orders{% endblock title %}
 
 {% block body %}
-
 <hr class="border border-dark border-1 opacity-50">
 
 <div class="container-fluid">
-
     <div class="container-fluid d-flex justify-content-between align-items-center">
-        <h4>Table NO:</h4>
-        <a class="btn btn-dark opacity-75" href="{% url 'manageitems' %}">Back</a>
+        <h4>Table NO: {{ table.table_no }}</h4>
+        <a class="btn btn-dark opacity-75" href="{% url 'orders' %}">Back</a>
     </div>
-
     <hr class="border border-dark border-1 opacity-50">
 
     <div class="row">
-
         <!-- Category -->
         <div class="col-2">
-
             <h4>Category</h4>
-            
-
             <table class="table table-secondary table-striped table-hover">
                 <tbody>
                     <th>Category</th>
                     {% for category in categories %}
-
-                    <tr class="category-row"
-                        data-id="{{ category.id }}"
-                        style="cursor:pointer;">
+                    <tr class="category-row" data-id="{{ category.id }}" style="cursor:pointer;">
                         <td>{{ category.name }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-
         </div>
 
         <!-- Items -->
         <div class="col-5">
-
             <h4>Items</h4>
             <style>
-            .hover-card {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-                box-shadow: 0 5px 5px rgba(46, 46, 46, 0.15);
-                cursor: pointer;
-            }
-            .hover-card:hover {
-                transform: translateY(-5px) scale(1.02);
-                box-shadow: 0 10px 20px rgba(6, 118, 45, 0.15);
-                z-index: 10;
-            }
+            .hover-card { transition: transform .3s ease, box-shadow .3s ease; box-shadow:0 5px 5px rgba(46,46,46,.15); }
+            .hover-card:hover { transform: translateY(-5px) scale(1.02); box-shadow:0 10px 20px rgba(6,118,45,.15); z-index:10; }
             </style>
-
-            <div id="items-body" class="d-flex flex-wrap gap-2">
-            </div>
-
+            <div id="items-body" class="d-flex flex-wrap gap-2"></div>
         </div>
-   
+
         <!-- Bill -->
         <div class="col-5">
-
             <h4>Bill</h4>
-
             <table class="table table-bordered">
                 <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Price</th>
-                    </tr>
+                    <tr><th>Item</th><th>Qty</th><th>Subtotal</th><th></th></tr>
                 </thead>
-
-                <tbody id="bill">
-
-                </tbody>
-
+                <tbody id="bill"></tbody>
             </table>
+            <div id="bill-error" class="text-danger"></div>
 
+            <hr>
+            <h5>Settle Payment</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-success payment-btn" data-method="CASH">Cash</button>
+                <button class="btn btn-outline-primary payment-btn" data-method="CARD">Card</button>
+                <button class="btn btn-outline-warning payment-btn" data-method="UPI">UPI</button>
+            </div>
         </div>
-
     </div>
-
 </div>
 
 <script>
+const ORDER_ID = {{ order.id }};
+const CSRF_TOKEN = "{{ csrf_token }}";
 
-let bill = [];
-
-// Load Items
-
-document.querySelectorAll(".category-row").forEach(row => {
-
-    row.addEventListener("click", function () {
-
-        let id = this.dataset.id;
-
-        fetch(`/category/${id}/items/`)
-        .then(response => response.json())
-        .then(data => {
-
-            let tbody = document.getElementById("items-body");
-
-            tbody.innerHTML = "";
-
-            data.forEach(item => {
-
-                tbody.innerHTML += `
-                    <div class="card hover-card item-row m-1"
-                        data-name="${item.name}"
-                        data-price="${item.price}"
-                        style="width:25%; cursor:pointer;">
-
-                        <div class="card-header text-center fw-bold">
-                            ${item.name}
-                        </div>
-
-                        <div class="card-body text-center">
-                            <h5 class="text-success">₹${item.price}</h5>
-                        </div>
-                    </div>
-                    `;
-            });
-
-            addItemEvents();
-
-        });
-
-    });
-
-});
-
-
-
-// Add Item To Bill
-
-function addItemEvents(){
-
-    document.querySelectorAll(".item-row").forEach(row=>{
-
-        row.onclick=function(){
-
-            let name = this.dataset.name;
-            let price = parseFloat(this.dataset.price);
-
-            bill.push({
-                name:name,
-                price:price
-            });
-
-            renderBill();
-
-        }
-
-    });
-
+function post(url, body) {
+    return fetch(url, {
+        method: "POST",
+        headers: { "X-CSRFToken": CSRF_TOKEN, "Content-Type": "application/x-www-form-urlencoded" },
+        body: body
+    }).then(res => res.json());
 }
 
-
-// Render Bill
-
-function renderBill(){
-
+function refreshBill(data) {
     let tbody = document.getElementById("bill");
-
     tbody.innerHTML = "";
 
-    let total = 0;
+    if (data.items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No items yet</td></tr>`;
+    }
 
-    bill.forEach(item=>{
-
-        total += item.price;
-
+    data.items.forEach(item => {
         tbody.innerHTML += `
             <tr>
-                <td>${item.name}</td>
-                <td>₹${item.price.toFixed(2)}</td>
-            </tr>
-        `;
-
+                <td>${item.name} (${item.size})</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary qty-btn" data-id="${item.id}" data-action="dec">-</button>
+                    ${item.quantity}
+                    <button class="btn btn-sm btn-outline-secondary qty-btn" data-id="${item.id}" data-action="inc">+</button>
+                </td>
+                <td>₹${item.subtotal.toFixed(2)}</td>
+                <td><button class="btn btn-sm btn-outline-danger remove-btn" data-id="${item.id}">&times;</button></td>
+            </tr>`;
     });
 
-    tbody.innerHTML += `
-        <tr class="table-primary">
-            <th>Total</th>
-            <th>₹${total.toFixed(2)}</th>
-        </tr>
-    `;
+    tbody.innerHTML += `<tr class="table-primary"><th colspan="2">Total</th><th colspan="2">₹${data.total.toFixed(2)}</th></tr>`;
+    document.getElementById("bill-error").innerText = "";
 
+    document.querySelectorAll(".qty-btn").forEach(btn => {
+        btn.onclick = () => post(`/order-item/${btn.dataset.id}/update/`, `action=${btn.dataset.action}`).then(refreshBill);
+    });
+    document.querySelectorAll(".remove-btn").forEach(btn => {
+        btn.onclick = () => post(`/order-item/${btn.dataset.id}/update/`, `action=remove`).then(refreshBill);
+    });
 }
 
-</script>
+document.querySelectorAll(".category-row").forEach(row => {
+    row.addEventListener("click", function () {
+        fetch(`/category/${this.dataset.id}/items/`)
+        .then(res => res.json())
+        .then(data => {
+            let tbody = document.getElementById("items-body");
+            tbody.innerHTML = "";
+            data.forEach(item => {
+                let variants = item.variants.map(v =>
+                    `<button class="btn btn-sm btn-outline-success variant-btn m-1" data-variant-id="${v.id}">${v.size_display} - ₹${v.price}</button>`
+                ).join("");
+                tbody.innerHTML += `
+                    <div class="card hover-card m-1" style="width:30%;">
+                        <div class="card-header text-center fw-bold">${item.name}</div>
+                        <div class="card-body text-center">${variants}</div>
+                    </div>`;
+            });
+            document.querySelectorAll(".variant-btn").forEach(btn => {
+                btn.onclick = () => post(`/order/${ORDER_ID}/add-item/`, `variant_id=${btn.dataset.variantId}`).then(refreshBill);
+            });
+        });
+    });
+});
 
+document.querySelectorAll(".payment-btn").forEach(btn => {
+    btn.onclick = function () {
+        if (!confirm(`Settle bill with ${this.dataset.method}?`)) return;
+        post(`/order/${ORDER_ID}/settle/`, `payment_method=${this.dataset.method}`).then(data => {
+            if (data.error) {
+                document.getElementById("bill-error").innerText = data.error;
+            } else {
+                alert(`Bill settled: ${data.bill_number}`);
+                window.location.href = data.redirect;
+            }
+        });
+    };
+});
+
+refreshBill({
+    items: [
+        {% for oi in order.items.all %}
+        { id: {{ oi.id }}, name: "{{ oi.variant.item.name|escapejs }}", size: "{{ oi.variant.get_size_display }}", quantity: {{ oi.quantity }}, subtotal: {{ oi.subtotal }} },
+        {% endfor %}
+    ],
+    total: {{ order.total|default:0 }}
+});
+</script>
 {% endblock body %}

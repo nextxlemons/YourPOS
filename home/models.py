@@ -1,5 +1,6 @@
 from xml.dom import ValidationErr
 
+from django.utils import timezone
 from django.db import models
 
 # table to show status of all tables 
@@ -87,82 +88,43 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - Table {self.table.table_no}"
+    
+    @property
+    def total(self):
+        return sum(oi.subtotal for oi in self.items.all())
+    
 
-# # order where order 
-# class OrderItem(models.Model):
-#     class ServeStatus(models.TextChoices):
-#         PENDING = "pending", "Pending"
-#         SERVED = "served", "Served"
 
-#     order = models.ForeignKey(
-#         Order,
-#         on_delete=models.CASCADE,
-#         related_name="items"
-#     )
-#     menu_item = models.ForeignKey(
-#         MenuItem,
-#         on_delete=models.PROTECT
-#     )
-#     variant = models.ForeignKey(
-#         MenuVariant,
-#         null=True,
-#         blank=True,
-#         on_delete=models.SET_NULL
-#     )
-#     quantity = models.PositiveIntegerField(default=1)
-#     unit_price = models.DecimalField(max_digits=8, decimal_places=2)
-#     notes = models.CharField(max_length=200, blank=True)
-#     serve_status = models.CharField(
-#         max_length=20,
-#         choices=ServeStatus.choices,
-#         default=ServeStatus.PENDING
-#     )
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    variant = models.ForeignKey(MenuVariant, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=1)
 
-#     def clean(self):
-#         if self.variant and self.variant.item != self.menu_item:
-#             raise ValidationErr("Selected variant does not belong to selected menu item.")
+    class Meta:
+        unique_together = ("order", "variant")
 
-#     @property
-#     def total_price(self):
-#         return self.quantity * self.unit_price
+    @property
+    def subtotal(self):
+        return self.variant.price * self.quantity
 
-#     def __str__(self):
-#         return f"{self.quantity} x {self.menu_item.name}"
+    def __str__(self):
+        return f"{self.variant} x {self.quantity}"
+    
 
-# # order bill 
-# class Bill(models.Model):
-#     order = models.OneToOneField(
-#         Order,
-#         on_delete=models.PROTECT,
-#         related_name="bill"
-#     )
-#     bill_number = models.CharField(max_length=20, unique=True)
-#     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-#     cgst = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-#     sgst = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-#     discount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-#     total = models.DecimalField(max_digits=10, decimal_places=2)
-#     billed_at = models.DateTimeField(auto_now_add=True)
 
-#     def __str__(self):
-#         return f"Bill {self.bill_number}"
+class Bill(models.Model):
+    class PaymentMethod(models.TextChoices):
+        CASH = "CASH", "Cash"
+        CARD = "CARD", "Card"
+        UPI = "UPI", "UPI"
 
-# # how payment is done 
-# class Payment(models.Model):
-#     class Mode(models.TextChoices):
-#         CASH = "cash", "Cash"
-#         CARD = "card", "Card"
-#         UPI = "upi", "UPI"
+    bill_number = models.CharField(max_length=20, unique=True)
+    order = models.OneToOneField(Order, on_delete=models.PROTECT, related_name="bill")
+    table = models.ForeignKey(TableInfo, on_delete=models.PROTECT)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=5, choices=PaymentMethod.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-#     bill = models.ForeignKey(
-#         Bill,
-#         on_delete=models.PROTECT,
-#         related_name="payments"
-#     )
-#     mode = models.CharField(max_length=10, choices=Mode.choices)
-#     amount = models.DecimalField(max_digits=10, decimal_places=2)
-#     reference = models.CharField(max_length=100, blank=True)
-#     paid_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.bill_number
 
-#     def __str__(self):
-#         return f"{self.mode} - ₹{self.amount}"

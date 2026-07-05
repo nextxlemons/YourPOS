@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sales Report{% endblock title %}
+{% block body %}
+<hr class="border border-dark border-1 opacity-50">
+<div class="container-fluid">
+    <h4>Sales Report</h4>
+    <div class="row">
+        {% for label, data in report_data %}
+        <div class="col-4">
+            <div class="card text-center">
+                <div class="card-header">{{ label }}</div>
+                <div class="card-body">
+                    <h5>₹{{ data.total|default:0 }}</h5>
+                    <p>{{ data.count }} orders</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock body %}
