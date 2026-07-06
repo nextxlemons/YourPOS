@@ -2,19 +2,20 @@
 {% block title %}Orders{% endblock title %}
 
 {% block body %}
-<hr class="border border-dark border-1 opacity-50">
+<hr class="border border-light border-1">
+<div class="container-fluid d-flex justify-content-between align-items-center px-4">
+    <h5> Table : {{table.table_no}}</h5>
+    <a class="btn btn-light" href="{% url 'orders' %}">Back</a>
+</div>
+<hr class="border border-white border-1">
 
-<div class="container-fluid">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-        <h4>Table NO: {{ table.table_no }}</h4>
-        <a class="btn btn-dark opacity-75" href="{% url 'orders' %}">Back</a>
-    </div>
-    <hr class="border border-dark border-1 opacity-50">
+<div class="container-fluid px-4">
+    <div class="row align-items-stretch">
 
-    <div class="row">
+
         <!-- Category -->
         <div class="col-2">
-            <h4>Category</h4>
+            <h5>Category</h5>
             <table class="table table-secondary table-striped table-hover">
                 <tbody>
                     <th>Category</th>
@@ -26,20 +27,26 @@
                 </tbody>
             </table>
         </div>
-
+        <div class="col-auto px-0 d-flex align-items-stretch">
+            <div class="vr h-100"></div>
+        </div>
+        
         <!-- Items -->
-        <div class="col-5">
-            <h4>Items</h4>
+        <div class="col">
+            <h5>Items</h5>
             <style>
-            .hover-card { transition: transform .3s ease, box-shadow .3s ease; box-shadow:0 5px 5px rgba(46,46,46,.15); }
-            .hover-card:hover { transform: translateY(-5px) scale(1.02); box-shadow:0 10px 20px rgba(6,118,45,.15); z-index:10; }
+            .hover-card { transition: transform .3s ease, box-shadow .3s ease; box-shadow:0 5px 5px rgba(60, 60, 60, 0.5); }
+            .hover-card:hover { transform: translateY(-5px) scale(1.02); box-shadow:0 10px 20px rgb(84, 98, 87); z-index:10; }
             </style>
             <div id="items-body" class="d-flex flex-wrap gap-2"></div>
         </div>
-
-        <!-- Bill -->
-        <div class="col-5">
-            <h4>Bill</h4>
+        <div class="col-auto px-0 d-flex align-items-stretch">
+            <div class="vr h-100"></div>
+        </div>
+        
+        <!-- Items -->
+        <div class="col">
+            <h5>Bill</h5>
             <table class="table table-bordered">
                 <thead>
                     <tr><th>Item</th><th>Qty</th><th>Subtotal</th><th></th></tr>
@@ -48,7 +55,15 @@
             </table>
             <div id="bill-error" class="text-danger"></div>
 
-            <hr>
+            <hr class="border border-white border-1">
+
+            <h5>Note:</h5>
+            <div class="d-flex gap-2">
+                <input type="text" id="note-input" class="form-control" placeholder="Add a note..." name="note-input">
+            </div>
+
+            <hr class="border border-white border-1">
+
             <h5>Settle Payment</h5>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-success payment-btn" data-method="CASH">Cash</button>
@@ -128,10 +143,15 @@ document.querySelectorAll(".category-row").forEach(row => {
     });
 });
 
+
 document.querySelectorAll(".payment-btn").forEach(btn => {
     btn.onclick = function () {
         if (!confirm(`Settle bill with ${this.dataset.method}?`)) return;
-        post(`/order/${ORDER_ID}/settle/`, `payment_method=${this.dataset.method}`).then(data => {
+
+        const note = document.getElementById("note-input").value;
+        const body = `payment_method=${encodeURIComponent(this.dataset.method)}&note=${encodeURIComponent(note)}`;
+
+        post(`/order/${ORDER_ID}/settle/`, body).then(data => {
             if (data.error) {
                 document.getElementById("bill-error").innerText = data.error;
             } else {

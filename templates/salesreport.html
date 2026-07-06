@@ -5,17 +5,33 @@
 <div class="container-fluid">
     <h4>Sales Report</h4>
     <div class="row">
-        {% for label, data in report_data %}
         <div class="col-4">
             <div class="card text-center">
-                <div class="card-header">{{ label }}</div>
+                <div class="card-header">Today</div>
                 <div class="card-body">
-                    <h5>₹{{ data.total|default:0 }}</h5>
-                    <p>{{ data.count }} orders</p>
+                    <h5>₹{{ daily.total|default:0 }}</h5>
+                    <p>{{ daily.count }} orders</p>
                 </div>
             </div>
         </div>
-        {% endfor %}
+        <div class="col-4">
+            <div class="card text-center">
+                <div class="card-header">This Week</div>
+                <div class="card-body">
+                    <h5>₹{{ weekly.total|default:0 }}</h5>
+                    <p>{{ weekly.count }} orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card text-center">
+                <div class="card-header">This Month</div>
+                <div class="card-body">
+                    <h5>₹{{ monthly.total|default:0 }}</h5>
+                    <p>{{ monthly.count }} orders</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock body %}

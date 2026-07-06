@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0023_alter_menuitem_options'),
+        ('home', '0001_0001_initial_setup_squashed_0023_alter_menuitem_options'),
     ]
 
     operations = [

@@ -102,23 +102,35 @@ def update_order_item(request, item_id):
 
     return JsonResponse(bill_payload(item.order))
 
-
-
 @require_POST
 def settle_order(request, order_id):
     order = get_object_or_404(Order, pk=order_id, status=Order.Status.ACTIVE)
     payment_method = request.POST.get("payment_method")
+    note = request.POST.get("note", "").strip()
+
 
     if payment_method not in Bill.PaymentMethod.values:
         return JsonResponse({"error": "Invalid payment method"}, status=400)
     if not order.items.exists():
         return JsonResponse({"error": "Cannot settle an empty order"}, status=400)
 
-    total = sum(oi.subtotal for oi in order.items.all())
+    order_items = order.items.select_related("variant__item")
+    total = sum(oi.subtotal for oi in order_items)
+
+    parts = []
+    for oi in order_items:
+        name = oi.variant.item.name
+        size = oi.variant.get_size_display()
+        label = name if size == "Default" else f"{name} ({size})"
+        parts.append(f"{label} x{oi.quantity}")
+    items_summary = ", ".join(parts)
+
     bill = Bill.objects.create(
         bill_number=generate_bill_number(order.table.table_no),
         order=order, table=order.table,
         total_amount=total, payment_method=payment_method,
+        items_summary=items_summary,
+        note=note,
     )
 
     order.status = Order.Status.CLOSED
@@ -126,14 +138,14 @@ def settle_order(request, order_id):
     order.table.status = TableInfo.Status.AVAILABLE
     order.table.save()
 
-
     return JsonResponse({"success": True, "bill_number": bill.bill_number, "redirect": "/orders"})
-
 
 def generate_bill_number(table_no):
     """
     Format: TT CCCC DD MM
-    TT = table number (01-20+), CCCC = daily counter (0001-1000+), DD/MM = day/month
+    TT = table number (01-20+), 
+    CCCC = daily counter (0001-1000+), 
+    DD/MM = day/month
     e.g. Table 5, 12th bill today, on 4th July -> 05001204 07  (05-0012-04-07)
     """
     today = timezone.now()
@@ -157,10 +169,6 @@ def salesreport(request):
         "monthly": agg(Bill.objects.filter(created_at__date__gte=month_start)),
     })
 
-
-
-def reports(request):
-    return render(request, 'reports.html')
 
 
 def managecategories(request):

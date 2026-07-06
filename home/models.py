@@ -21,7 +21,6 @@ class TableInfo(models.Model):
     def __str__(self):
         return f"Table {self.table_no}"
   
-
 # table menu of category
 class MenuCategory(models.Model):
     name = models.CharField(max_length=100,unique=True)
@@ -59,7 +58,7 @@ class MenuVariant(models.Model):
         on_delete=models.CASCADE,
         related_name="variants"
     )
-    size= models.CharField(max_length=10, choices=Size.choices)
+    size= models.CharField(max_length=10, choices=Size.choices,default=Size.DEFAULT)
     price = models.DecimalField(max_digits=8, decimal_places=2)
 
     class Meta:
@@ -122,7 +121,11 @@ class Bill(models.Model):
     bill_number = models.CharField(max_length=20, unique=True)
     order = models.OneToOneField(Order, on_delete=models.PROTECT, related_name="bill")
     table = models.ForeignKey(TableInfo, on_delete=models.PROTECT)
+    items_summary = models.CharField(max_length=1000, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    note = models.CharField(max_length=1000, blank=True)
+    
     payment_method = models.CharField(max_length=5, choices=PaymentMethod.choices)
     created_at = models.DateTimeField(auto_now_add=True)
 

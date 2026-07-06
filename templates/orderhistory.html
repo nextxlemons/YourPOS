@@ -5,16 +5,18 @@
 <div class="container-fluid">
     <h4>Order History</h4>
     <table class="table table-striped">
-        <thead><tr><th>Bill No</th><th>Table</th><th>Amount</th><th>Payment</th><th>Date</th><th>Time</th></tr></thead>
+        <thead><tr><th>Bill No</th><th>Table</th><th>Amount</th><th>Items</th><th>Payment</th><th>Date</th><th>Time</th><th>Note</th></tr></thead>
         <tbody>
             {% for bill in bills %}
             <tr>
                 <td>{{ bill.bill_number }}</td>
                 <td>{{ bill.table.table_no }}</td>
                 <td>₹{{ bill.total_amount }}</td>
+                <td>{{ bill.items_summary }}</td>
                 <td>{{ bill.get_payment_method_display }}</td>
                 <td>{{ bill.created_at|date:"d-m-Y" }}</td>
                 <td>{{ bill.created_at|time:"H:i" }}</td>
+                <td>{{ bill.note|default:"—" }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="6" class="text-center text-muted">No bills yet</td></tr>

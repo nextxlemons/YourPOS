@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Orders{% endblock title %}
 {% block body %}
-<hr class="border border-dark border-1 opacity-50">
+<hr class="border border-light border-1">
+<div class="container-fluid d-flex justify-content-between align-items-center px-4">
+    <h5> Tables Views</h5>
+    <a class="btn btn-light" data-bs-toggle="collapse" href="#addtablebox" role="button">+ New Table</a>
+</div>
+<hr class="border border-white border-1">
 
 <div class="container-fluid">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-        <h4>Tables Views</h4>
-        <a class="btn btn-dark opacity-75" data-bs-toggle="collapse" href="#addtablebox" role="button">+ New Table</a>
-    </div>
-    <hr class="border border-dark border-1 opacity-50">
 
-    <div class="container">
+    <div class="justify-content-center d-flex flex-wrap gap-2 my-3">
         <style>
         .hover-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -41,6 +41,7 @@
         {% endfor %}
     </div>
 </div>
+
 
 <div class="postion-relative collapse" id="addtablebox">
 
