@@ -1,5 +1,5 @@
 
-# YourPOS : Cafe point of sell system☕
+# YourPOS : Cafe Point Of Sell☕
 
 A lightweight, table-based Point of Sale (POS) system built for small cafés and restaurants. Originally a desktop app (Python + Tkinter + SQLite) used in an active café, rebuilt as a Django web application for easier access, better data handling, and room to grow.
 
