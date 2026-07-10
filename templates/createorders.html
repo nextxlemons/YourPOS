@@ -16,9 +16,8 @@
         <!-- Category -->
         <div class="col-2">
             <h5>Category</h5>
-            <table class="table table-secondary table-striped table-hover">
+            <table class="table table-dark table-striped table-borderless table-hover">
                 <tbody>
-                    <th>Category</th>
                     {% for category in categories %}
                     <tr class="category-row" data-id="{{ category.id }}" style="cursor:pointer;">
                         <td>{{ category.name }}</td>
@@ -47,8 +46,8 @@
         <!-- Items -->
         <div class="col">
             <h5>Bill</h5>
-            <table class="table table-bordered">
-                <thead>
+            <table class="table table-dark table-striped table-borderless table-hover">
+                <thead class="table-light">
                     <tr><th>Item</th><th>Qty</th><th>Subtotal</th><th></th></tr>
                 </thead>
                 <tbody id="bill"></tbody>
@@ -91,7 +90,7 @@ function refreshBill(data) {
     tbody.innerHTML = "";
 
     if (data.items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No items yet</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-light">No items yet</td></tr>`;
     }
 
     data.items.forEach(item => {
@@ -154,8 +153,6 @@ document.querySelectorAll(".payment-btn").forEach(btn => {
         post(`/order/${ORDER_ID}/settle/`, body).then(data => {
             if (data.error) {
                 document.getElementById("bill-error").innerText = data.error;
-            } else {
-                alert(`Bill settled: ${data.bill_number}`);
                 window.location.href = data.redirect;
             }
         });

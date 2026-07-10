@@ -5,6 +5,8 @@ from django.views.decorators.http import require_POST
 from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib import messages
+
 
 from home.models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order, OrderItem, Bill
 
@@ -23,10 +25,11 @@ def orders(request):
             table_no = request.POST.get('table_no')
             table_add = TableInfo(table_no=table_no)
             table_add.save()
+            messages.success(request, f"Table {table_no} added successfully.")
             return redirect('orders')
+        
 
     data = TableInfo.objects.all().order_by('table_no')
-    # context = {'items': data} for context passing
     return render(request, 'orders.html', {'items': data})
 
 
@@ -132,6 +135,7 @@ def settle_order(request, order_id):
         items_summary=items_summary,
         note=note,
     )
+    messages.success(request, f"Order settled successfully. Table Number: {bill.table.table_no}, Bill Number: {bill.bill_number}")
 
     order.status = Order.Status.CLOSED
     order.save()
@@ -179,14 +183,19 @@ def managecategories(request):
             name = request.POST.get('name')
             MenuCategory.objects.create(name=name)
 
+            messages.success(request, f"Category '{name}' added successfully.")
+
         elif action == 'rename_category':
             old_name = request.POST.get('old_name')
             new_name = request.POST.get('new_name')
             MenuCategory.objects.filter(name=old_name).update(name=new_name)
 
+            messages.success(request, f"Category renamed from '{old_name}' to '{new_name}'.")
+
         elif action == 'delete_category':
             category_name = request.POST.get('category_name')
             MenuCategory.objects.filter(name=category_name).delete()
+            messages.success(request, f"Category '{category_name}' deleted successfully.")
 
         return redirect('managecategories')
 
@@ -201,6 +210,8 @@ def manageitems(request):
         if action == "delete_item":
             name = request.POST.get('item_name')
             MenuItem.objects.filter(name=name).delete()
+            messages.success(request, f"Item '{name}' deleted successfully.")
+            return redirect('manageitems')
 
     data = MenuItem.objects.select_related('category').prefetch_related('variants').order_by('category_id')
     return render(request, 'manageitems.html', {'items': data})
@@ -233,6 +244,7 @@ def additems(request):
             variant_price_d = request.POST.get('variant_price_d')
             MenuVariant.objects.create(item=item,size="D",price=variant_price_d)
 
+        messages.success(request, f"Item '{name}' added successfully.")
         return redirect('manageitems')
 
     return render(request, 'additems.html', {'categories': categories})
@@ -259,6 +271,7 @@ def edititem(request, pk):
             price_d = request.POST.get('variant_price_d')
             MenuVariant.objects.update_or_create(item=item, size='D', defaults={'price': price_d}) if price_d else None
 
+        messages.success(request, f"Item '{item.name}' updated successfully.")
         return redirect('manageitems')
 
     # pass prices to template
