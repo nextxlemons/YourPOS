@@ -1,24 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Manage Items{% endblock title %}
 {% block body %}
-<hr class="border border-primary border-1 opacity-50">
-<div class="container-fluid d-flex justify-content-between align-items-center px-3">
-    <h4>+Add New Items </h4>
-    <a class="btn btn-dark btn-outline-seconda opacity-75" href="/manageitems">Back</a>
+<hr class="border border-light border-1">
+<div class="container-fluid d-flex justify-content-between align-items-center px-4">
+    <h5>+Add New Item</h5>
+    <a class="btn btn-light" href="/manageitems">Back</a>
 </div>
-<hr class="border border-primary border-1 opacity-50">
-<div class="container-fluid">
-    <div class="container my-5" style="max-width: 620px;">
+<hr class="border border-light border-1">
+
+<div class="container-fluid px-4">
+    <div class="container my-2" style="max-width: 620px;">
 
     <div class="card shadow-sm">
         <div class="card-body p-4">
-            <h4 class="form-label fw-semibold">Please enter details about item.</h4>
+            <h4 class="form-label fw-semibold">Please Enter Details.</h4>
                 <hr class="border border-dark border-1 opacity-50">
             <form method="POST">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Item Name</label>
-                    <input type="text" name="name" class="form-control" placeholder="e.g. Cappuccino" required>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Mix Veg Pizza" required>
                 </div>
 
                 <div class="mb-3">

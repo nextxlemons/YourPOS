@@ -154,10 +154,13 @@ document.querySelectorAll(".payment-btn").forEach(btn => {
             if (data.error) {
                 document.getElementById("bill-error").innerText = data.error;
                 window.location.href = data.redirect;
+            } else {
+                window.location.href = data.redirect;
             }
         });
     };
 });
+
 
 refreshBill({
     items: [

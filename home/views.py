@@ -28,7 +28,6 @@ def orders(request):
             messages.success(request, f"Table {table_no} added successfully.")
             return redirect('orders')
         
-
     data = TableInfo.objects.all().order_by('table_no')
     return render(request, 'orders.html', {'items': data})
 
@@ -36,9 +35,7 @@ def orders(request):
 def createorders(request, table_id):
     table = get_object_or_404(TableInfo, pk=table_id)
     order, created = Order.objects.get_or_create(table=table, status=Order.Status.ACTIVE)
-    if created:
-        table.status = TableInfo.Status.OCCUPIED
-        table.save()
+
     categories = MenuCategory.objects.filter(is_active=True)
     return render(request, "createorders.html", {
         "table": table, "order": order, "categories": categories,
@@ -83,6 +80,10 @@ def add_order_item(request, order_id):
         order_item.quantity += 1
         order_item.save()
 
+    if order.table.status != TableInfo.Status.OCCUPIED:
+        order.table.status = TableInfo.Status.OCCUPIED
+        order.table.save()
+
     return JsonResponse(bill_payload(order))
 
 
@@ -90,6 +91,8 @@ def add_order_item(request, order_id):
 def update_order_item(request, item_id):
     item = get_object_or_404(OrderItem, pk=item_id)
     action = request.POST.get("action")
+
+    order = item.order
 
     if action == "inc":
         item.quantity += 1
@@ -102,6 +105,10 @@ def update_order_item(request, item_id):
             item.save()
     elif action == "remove":
         item.delete()
+
+    if not order.items.exists():
+        order.table.status = TableInfo.Status.AVAILABLE
+        order.table.save()
 
     return JsonResponse(bill_payload(item.order))
 
@@ -159,6 +166,9 @@ def generate_bill_number(table_no):
 def orderhistory(request):
     bills = Bill.objects.select_related("table").order_by("-created_at")
     return render(request, "orderhistory.html", {"bills": bills})
+
+def settings(request):
+    return render(request, "settings.html")
 
 
 def salesreport(request):

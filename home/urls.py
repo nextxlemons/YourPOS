@@ -24,6 +24,8 @@ urlpatterns = [
 
     path('orderhistory/', views.orderhistory, name='orderhistory'),
     path('salesreport/', views.salesreport, name='salesreport'),
+    path('settings/', views.settings, name='settings'),
+
 
 
 ]

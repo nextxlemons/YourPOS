@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock title %}
+{% block body %}
+
+<hr class="border border-light border-1">
+<div class="container-fluid d-flex justify-content-between align-items-center px-4">
+    <h5>Settings</h5>
+</div>
+<hr class="border border-white border-1">
+
+<div class="container-fluid px-4">
+    <table class="table table-bordered border-light table-striped">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Settings Name</th>
+                <th scope="col">Description</th>
+                
+            </tr>
+        </thead>
+        <tbody class="table-group-divider">
+            <tr>
+                <td>1</td>
+                <td>Café/Business Info</td>
+                <td>Café name, address, phone number, GSTIN/tax ID </td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Table Management</td>
+                <td>Manage tables, Bulk-add, rename/delete</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Account / Access</td>
+                <td>Manage user accounts and access permissions</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>Billing Preferences</td>
+                <td>Bill number format,Enable/disable tax (GST %),"Note" enable/disable</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>Appearance</td>
+                <td>Light/dark theme</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td>Data Management</td>
+                <td>Export order history / sales report as CSV</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock body %}

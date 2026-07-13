@@ -3,58 +3,59 @@
 {% block body %}
 <hr class="border border-light border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
-    <h5> Tables Views</h5>
-    <a class="btn btn-light" data-bs-toggle="collapse" href="#addtablebox" role="button">+ New Table</a>
+    <h5>Tables Views</h5>
+    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addTableModal">+ New Table</button>
 </div>
 <hr class="border border-white border-1">
 
 <div class="container-fluid">
-
     <div class="justify-content-center d-flex flex-wrap gap-2 my-3">
         <style>
-        .hover-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
-        }
-        .hover-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-            z-index: 10;
-        }
-        .hover-card a {
-            text-decoration: none;
-            color: inherit;
-        }
+        .hover-card { transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
+        .hover-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.15); z-index: 10; }
+        .hover-card a { text-decoration: none; color: inherit; }
         </style>
         {% for item in items %}
         <div class="card d-inline-flex m-1 hover-card">
-            <a href="/createorders/{{ item.pk }}">
-            <div class="card-header">Table : {{item.table_no}}</div>
-
+            <a href="{% url 'createorders' item.pk %}">
+            <div class="card-header">Table : {{ item.table_no }}</div>
             {% if item.status == "A" %}
-                <div class="card-body text-success">{{item.get_status_display}}</div>
+                <div class="card-body text-success">{{ item.get_status_display }}</div>
             {% elif item.status == "O" %}
-                <div class="card-body text-danger">{{item.get_status_display}}</div>
+                <div class="card-body text-danger">{{ item.get_status_display }}</div>
             {% endif %}
             </a>
-        </div>    
+        </div>
         {% endfor %}
     </div>
 </div>
 
-
-<div class="postion-relative collapse" id="addtablebox">
-
-    <div class="z-1 position-absolute bg-body-secondary border border-dark rounded-2 top-50 start-50">
-        <div class="container m-3">
-          <form method="POST">
-            {% csrf_token %}
-            <h3 class="text-dark">Add new Table</h3>
-            <input type="number" name="table_no" placeholder="enter table no" min="0" required ></input>
-            <button class="btn btn-dark" type="submit" name="action" value="add_table">ADD</button>
-          </form>
+<!-- Add Table Modal -->
+<div class="modal fade" id="addTableModal" tabindex="-1" aria-labelledby="addTableModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addTableModalLabel">Add New Table</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-    </div>      
+        <div class="modal-body">
+          <label class="form-label">Table Number</label>
+          <input type="number" name="table_no" id="tableNoInput" class="form-control" placeholder="Enter table no" min="0" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-dark" type="submit" name="action" value="add_table">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
+<script>
+document.getElementById('addTableModal').addEventListener('shown.bs.modal', function () {
+    document.getElementById('tableNoInput').focus();
+});
+</script>
 {% endblock body %}

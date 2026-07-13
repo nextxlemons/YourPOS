@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Manage Categories{% endblock title %}
 {% block body %}
-<hr class="border border-dark border-1 opacity-50">
+<hr class="border border-light border-1">
+<div class="container-fluid d-flex justify-content-between align-items-center px-4">
+    <h5>Manage Categories</h5>
+    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+ New Category</button>
+</div>
+<hr class="border border-white border-1">
 
-<div class="container-fluid">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-        <h4>Manage Categories </h4>
-        <a class="btn btn-dark opacity-75" data-bs-toggle="collapse" href="#addtablebox" role="button">+ New Category</a>
-
-    </div>
-    <hr class="border border-dark border-1 opacity-50">
+<div class="container-fluid px-4">
     <div class="container my-4 mx-auto">
     <table class="table table-bordered border-dark table-striped">
         <thead>
@@ -26,7 +25,6 @@
                 <th scope="row">{{ forloop.counter }}</th>
                 <td>
                     <span id="display-{{ item.name|slugify }}">{{ item.name }}</span>
-
                     <form id="form-{{ item.name|slugify }}" method="POST" class="d-none">
                         {% csrf_token %}
                         <input type="hidden" name="old_name" value="{{ item.name }}">
@@ -43,7 +41,6 @@
                 </td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary" onclick="toggleEdit('{{ item.name|slugify }}')">Rename</button>
-                    
                     <form method="POST" class="d-inline" onsubmit="return confirm('Delete {{ item.name }}?')">
                         {% csrf_token %}
                         <input type="hidden" name="category_name" value="{{ item.name }}">
@@ -54,37 +51,46 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Category Name</label>
+          <input type="text" name="name" id="categoryNameInput" class="form-control" placeholder="Enter category name" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-dark" type="submit" name="action" value="add_category">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
+<!-- for add category modal -->
+document.getElementById('addCategoryModal').addEventListener('shown.bs.modal', function () {
+    document.getElementById('categoryNameInput').focus();
+});
+<!-- for rename category -->
 function toggleEdit(slugName) {
-    // Hide text, show form
     document.getElementById('display-' + slugName).classList.add('d-none');
     const form = document.getElementById('form-' + slugName);
     form.classList.remove('d-none');
     form.classList.add('d-inline-flex');
-    
-    // Focus input
     const input = form.querySelector('input[name="new_name"]');
     input.focus();
     input.select();
 }
 </script>
-
-</div>
-
-<div class="postion-relative collapse" id="addtablebox">
-
-    <div class="z-1 position-absolute bg-body-secondary border border-dark rounded-2 top-50 start-50">
-        <div class="container m-3">
-          <form method="POST">
-            {% csrf_token %}
-            <h3 class="text-dark">Add new Category</h3>
-            <input type="text" name="name" placeholder="enter category name" required></input>
-            <button class="btn btn-dark" type="submit" name="action" value="add_category">ADD</button>
-          </form>
-        </div>
-    </div>      
-</div>
-
 {% endblock body %}
