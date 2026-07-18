@@ -11,22 +11,5 @@ __pycache__/
 *$py.class
 *.so
 
-# Django
-media/
-staticfiles/
-
-# Virtual environment
-.venv/
-venv/
-env/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
 # Logs
 *.log
