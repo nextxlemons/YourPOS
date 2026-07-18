@@ -11,5 +11,7 @@ __pycache__/
 *$py.class
 *.so
 
+static/
+
 # Logs
 *.log
