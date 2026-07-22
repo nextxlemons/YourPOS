@@ -12,11 +12,27 @@ from home.models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order, O
 
 
 # Create your views here.
-def index(request):
-    return render(request,'index.html')
+
 
 def home(request):
-    return render(request, 'home.html')
+    today = timezone.now().date()
+
+    today_bills = Bill.objects.filter(created_at__date=today)
+    today_stats = today_bills.aggregate(total=Sum("total_amount"), count=Count("id"))
+
+    recent_bill = Bill.objects.select_related("table").order_by("-created_at").first()
+
+    occupied_tables = TableInfo.objects.filter(status=TableInfo.Status.OCCUPIED).order_by("table_no")
+    total_tables = TableInfo.objects.count()
+
+    return render(request, "home.html", {
+        "today_total": today_stats["total"] or 0,
+        "today_count": today_stats["count"] or 0,
+        "recent_bill": recent_bill,
+        "occupied_tables": occupied_tables,
+        "occupied_count": occupied_tables.count(),
+        "total_tables": total_tables,
+    })
 
 def orders(request):
     if request.method == "POST":

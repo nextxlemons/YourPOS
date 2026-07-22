@@ -10,14 +10,85 @@
 </div>
 <hr class="border border-white border-1">
 
-<div class="container-fluid py-4">
-    <h2>Welcome to the YourPOS</h2>
-    <p>Simple Point of Sale Webapplication for your cafe / restaurant.</p>
-    <h5><strong>How it works(Guide):</strong></h5>
-    <p>1. Staff selects a table → a `Order tab` status flips to <b>Occupied</b>, an active `Order` is created (or reused).</p>
-    <p>2. Add an item with its variants.</p>
-    <p>3. Settling the bill snapshots the order into a `Bill` record.</p>
-    <p>4. The table flips back to <b>Available</b>, ready for the next customer.</p>
+<div class="container-fluid px-4">
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-body-secondary text-dark h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-1">Today's Sales</h6>
+                    <h3 class="fw-bold text-success">₹{{ today_total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-body-secondary text-dark h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-1">Bills Settled Today</h6>
+                    <h3 class="fw-bold text-primary">{{ today_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-body-secondary text-dark h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-1">Tables Occupied</h6>
+                    <h3 class="fw-bold text-danger">{{ occupied_count }} / {{ total_tables }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        <!-- Recent Settled Bill -->
+        <div class="col-md-6">
+            <div class="card bg-body-secondary text-dark h-100">
+                <div class="card-header fw-semibold">Most Recent Bill</div>
+                <div class="card-body">
+                    {% if recent_bill %}
+                        <p class="mb-1"><strong>Bill No:</strong> {{ recent_bill.bill_number }}</p>
+                        <p class="mb-1"><strong>Table:</strong> {{ recent_bill.table.table_no }}</p>
+                        <p class="mb-1"><strong>Amount:</strong> ₹{{ recent_bill.total_amount }}</p>
+                        <p class="mb-1"><strong>Payment:</strong> {{ recent_bill.get_payment_method_display }}</p>
+                        <p class="mb-1"><strong>Time:</strong> {{ recent_bill.created_at|date:"d-m-Y" }} at {{ recent_bill.created_at|time:"H:i" }}</p>
+                        {% if recent_bill.note %}
+                        <p class="mb-0"><strong>Note:</strong> {{ recent_bill.note }}</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">No bills settled yet.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'orderhistory' %}" class="btn btn-sm btn-outline-dark">View Full History</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Occupied Tables -->
+        <div class="col-md-6">
+            <div class="card bg-body-secondary text-dark h-100">
+                <div class="card-header fw-semibold">Occupied Tables</div>
+                <div class="card-body">
+                    {% if occupied_tables %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for table in occupied_tables %}
+                            <a href="{% url 'createorders' table.pk %}" class="btn btn-outline-danger btn-sm">
+                                Table {{ table.table_no }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">All tables are available.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'orders' %}" class="btn btn-sm btn-outline-dark">View All Tables</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
 {% endblock body %}
 

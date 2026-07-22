@@ -3,7 +3,6 @@
 
 # Database
 db.sqlite3
-db.sqlite3-journal
 
 # Python
 __pycache__/
@@ -12,6 +11,5 @@ __pycache__/
 *.so
 
 static/
-
 # Logs
 *.log
