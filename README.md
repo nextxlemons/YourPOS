@@ -123,7 +123,6 @@ POS/
 │   ├── createorders.html
 │   ├── edititem.html
 │   ├── home.html
-│   ├── index.html
 │   ├── managecategories.html
 │   ├── manageitems.html
 │   ├── orderhistory.html
