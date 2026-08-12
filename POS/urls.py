@@ -24,5 +24,7 @@ admin.site.index_title = "Welcome to YourPOS Admin Portal"
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',include('home.urls')),
+    path('api/', include('home.api_urls')),
+
 ]
 
