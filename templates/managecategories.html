@@ -78,11 +78,11 @@
 </div>
 
 <script>
-<!-- for add category modal -->
+<!--  add category -->
 document.getElementById('addCategoryModal').addEventListener('shown.bs.modal', function () {
     document.getElementById('categoryNameInput').focus();
 });
-<!-- for rename category -->
+<!-- rename category -->
 function toggleEdit(slugName) {
     document.getElementById('display-' + slugName).classList.add('d-none');
     const form = document.getElementById('form-' + slugName);
