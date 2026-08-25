@@ -1,7 +1,7 @@
 
 # YourPOS : Cafe Point Of Sell☕
 
-A lightweight, table-based Point of Sale (POS) system built for small cafés and restaurants. Originally a desktop app (Python + Tkinter + SQLite) used in an active café, rebuilt as a Django web application for easier access, better data handling, and room to grow.
+A lightweight, table-based Point of Sale (POS) system built for small cafés and restaurants. Originally a desktop app (Python + Tkinter + SQLite) used in an active café, rebuilt as a Django web application with (DRF+PostgreSQL) for easier access, better data handling, and room to grow.
 
 ---
 
@@ -151,7 +151,7 @@ venv\Scripts\activate        # Windows
 source venv/bin/activate     # macOS/Linux
 
 # 3. Install dependencies
-pip install django
+pip install -r requirements
 
 # 4. Apply migrations
 python manage.py migrate
