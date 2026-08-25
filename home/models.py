@@ -2,32 +2,50 @@ from xml.dom import ValidationErr
 
 from django.utils import timezone
 from django.db import models
+from django.contrib.auth.models import User
 
 # table to show status of all tables 
 
+# table for user of cafe
+
+class Cafe(models.Model):
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cafe')
+    name = models.CharField(max_length=150)
+    address = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
 #all tables in cafe 
 class TableInfo(models.Model):
     class Status(models.TextChoices):
         AVAILABLE = "A", "Available"
         OCCUPIED = "O", "Occupied"
 
+    cafe = models.ForeignKey(Cafe, on_delete=models.CASCADE, related_name='tables')
     table_no = models.IntegerField(primary_key=True)
     status = models.CharField(
         max_length=1,
         choices=Status.choices,
         default=Status.AVAILABLE
     )
-
     def __str__(self):
         return f"Table {self.table_no}"
-  
+
+    class Meta:
+        unique_together = ('cafe', 'table_no')
+    
 # table menu of category
 class MenuCategory(models.Model):
+    cafe = models.ForeignKey(Cafe, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100,unique=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+            unique_together = ('cafe', 'name')
 
 # menu of cafe,
 class MenuItem(models.Model):
@@ -118,6 +136,8 @@ class Bill(models.Model):
         CARD = "CARD", "Card"
         UPI = "UPI", "UPI"
 
+    cafe = models.ForeignKey(Cafe, on_delete=models.CASCADE, related_name='bills')
+
     bill_number = models.CharField(max_length=20, unique=True)
     order = models.OneToOneField(Order, on_delete=models.PROTECT, related_name="bill")
     table = models.ForeignKey(TableInfo, on_delete=models.PROTECT)
@@ -132,3 +152,5 @@ class Bill(models.Model):
     def __str__(self):
         return self.bill_number
 
+    class Meta:
+            unique_together = ('cafe', 'bill_number')  # bill numbers reset per café, not globally unique anymore

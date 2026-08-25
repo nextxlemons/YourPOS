@@ -13,7 +13,6 @@ from home.models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order, O
 
 # Create your views here.
 
-
 def home(request):
     today = timezone.now().date()
 
