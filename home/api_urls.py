@@ -1,7 +1,14 @@
 from django.urls import path
 from . import api_views
 
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .api_views import SignupAPI
+
 urlpatterns = [
+    path('auth/signup/', SignupAPI.as_view(), name='api-signup'),
+    path('auth/login/', TokenObtainPairView.as_view(), name='api-login'),
+    path('auth/refresh/', TokenRefreshView.as_view(), name='api-refresh'),
+
     path('tables/', api_views.TableListAPI.as_view(), name='api-tables'),
     path('categories/', api_views.MenuCategoryListAPI.as_view(), name='api-categories'),
     path('menu-items/', api_views.MenuItemListAPI.as_view(), name='api-menu-items'),

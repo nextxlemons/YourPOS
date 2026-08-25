@@ -1,6 +1,28 @@
 from rest_framework import serializers
 from .models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order, OrderItem, Bill
+from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from .models import Cafe
 
+class SignupSerializer(serializers.Serializer):
+    cafe_name = serializers.CharField(max_length=150)
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already taken.")
+        return value
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+        )
+        cafe = Cafe.objects.create(owner=user, name=validated_data['cafe_name'])
+        return {'user': user, 'cafe': cafe}
 
 class MenuVariantSerializer(serializers.ModelSerializer):
     size_display = serializers.CharField(source='get_size_display', read_only=True)
