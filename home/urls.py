@@ -2,10 +2,16 @@ from django.urls import path
 from django.contrib import admin
 from home import views
 
+from .views import signup_view, login_view, logout_view
 
 
 urlpatterns = [
-    path("", views.home, name='home'),
+
+    path('', signup_view, name='signup'),
+    path('signup/', signup_view, name='signup'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+
     path("home", views.home, name='home'),
     path("orders", views.orders, name='orders'),
 

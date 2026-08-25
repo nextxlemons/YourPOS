@@ -27,4 +27,3 @@ urlpatterns = [
     path('api/', include('home.api_urls')),
 
 ]
-

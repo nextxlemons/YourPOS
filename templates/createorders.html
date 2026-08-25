@@ -77,13 +77,19 @@
 const ORDER_ID = {{ order.id }};
 const CSRF_TOKEN = "{{ csrf_token }}";
 
-function post(url, body) {
+
+function apiPost(url, body) {
     return fetch(url, {
         method: "POST",
-        headers: { "X-CSRFToken": CSRF_TOKEN, "Content-Type": "application/x-www-form-urlencoded" },
-        body: body
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": CSRF_TOKEN,           // using SessionAuthentication not jwt 
+        },
+        body: JSON.stringify(body)
     }).then(res => res.json());
 }
+
+apiPost(`/api/orders/${ORDER_ID}/add-item/`, { variant_id: btn.dataset.variantId });
 
 function refreshBill(data) {
     let tbody = document.getElementById("bill");

@@ -11,6 +11,9 @@
     <div class="container-fluid d-flex">
       <img src="/static/img/logo.jpg" class="rounded-2 shadow-lg me-2" width="40" alt="...">
       <a class="navbar-brand" href="#">YourPOS</a>
+      <div class="hel">
+        {% %}
+      </div>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
         <span class="navbar-toggler-icon"></span>
@@ -41,7 +44,7 @@
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="/settings">Settings</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/logout">LOGOUT</a></li>
+            <li><a class="dropdown-item" href="{% url 'logout' %}">LOGOUT</a></li>
             </ul>
           </li>
         </ul>

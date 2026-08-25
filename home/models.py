@@ -23,42 +23,45 @@ class TableInfo(models.Model):
         OCCUPIED = "O", "Occupied"
 
     cafe = models.ForeignKey(Cafe, on_delete=models.CASCADE, related_name='tables')
-    table_no = models.IntegerField(primary_key=True)
+    table_no = models.IntegerField()
     status = models.CharField(
         max_length=1,
         choices=Status.choices,
         default=Status.AVAILABLE
     )
+    class Meta:
+        unique_together = ('cafe', 'table_no')
+
     def __str__(self):
         return f"Table {self.table_no}"
 
-    class Meta:
-        unique_together = ('cafe', 'table_no')
+    @classmethod
+    def next_table_no(cls, cafe):
+        last = cls.objects.filter(cafe=cafe).order_by('-table_no').first()
+        return (last.table_no + 1) if last else 1
     
 # table menu of category
 class MenuCategory(models.Model):
     cafe = models.ForeignKey(Cafe, on_delete=models.CASCADE, related_name='categories')
-    name = models.CharField(max_length=100,unique=True)
+    name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('cafe', 'name')
 
     def __str__(self):
         return self.name
 
-    class Meta:
-            unique_together = ('cafe', 'name')
-
+    
 # menu of cafe,
 class MenuItem(models.Model):
-    category = models.ForeignKey(
-        MenuCategory,
-        on_delete=models.PROTECT,
-        related_name="items"
-    )
-    name = models.CharField(max_length=150, unique=True)
+    category = models.ForeignKey(MenuCategory, on_delete=models.PROTECT, related_name="items")
+    name = models.CharField(max_length=150)
     is_active = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ("category", "name")
+
     def __str__(self):
         return f"{self.name} - {self.category.name}"
 
