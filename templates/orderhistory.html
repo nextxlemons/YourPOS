@@ -12,8 +12,11 @@
 <div class="container-fluid px-4">
     <table class="table table-primary table-bordered table-striped">
         <thead><tr><th>Bill No</th><th>Table</th><th>Amount</th><th>Items</th><th>Payment</th><th>Date</th><th>Time</th><th>Note</th></tr></thead>
-        <tbody>
-            {% for bill in bills %}
+        <tbody id="bill-rows"></tbody>
+    </table>
+</div>
+
+{% comment %} {% for bill in bills %}
             <tr>
                 <td>{{ bill.bill_number }}</td>
                 <td>{{ bill.table.table_no }}</td>
@@ -26,8 +29,44 @@
             </tr>
             {% empty %}
             <tr><td colspan="6" class="text-center text-muted">No bills yet</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+            {% endfor %} {% endcomment %}
+
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function apiGet(url) { 
+    return fetch(url, { 
+        headers: { 'X-CSRFToken': CSRF_TOKEN } 
+    }).then(r => r.json()); 
+}
+function apiPost(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(body || {})
+    }).then(r => r.json());
+}
+
+function loadOrderHistory() {
+    apiGet('/api/bills/').then(data => renderOrderHistory(data.results || data));
+}
+
+function renderOrderHistory(bill) {
+    const tbody = document.getElementById('bill-rows');
+    tbody.innerHTML = "";
+    categories.forEach((bill, i) => {
+        tbody.innerHTML += `
+            <tr>
+                <th>${i + 1}</th>
+                <td>
+                    <span>${bill.name}</span>
+                </td>
+            </tr>`;
+    });
+}
+
+
+loadOrderHistory();
+
+</script>
 {% endblock body %}

@@ -7,7 +7,8 @@ from .views import signup_view, login_view, logout_view
 
 urlpatterns = [
 
-    path('', signup_view, name='signup'),
+
+    path('', login_view, name='login'), # login as landing page
     path('signup/', signup_view, name='signup'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
@@ -17,10 +18,6 @@ urlpatterns = [
 
     path("createorders", views.createorders, name='createorders'),
     path('createorders/<int:table_id>/', views.createorders, name='createorders'),
-    path('category/<int:category_id>/items/', views.category_items, name='category_items'),
-    path('order/<int:order_id>/add-item/', views.add_order_item, name='add_order_item'),
-    path('order-item/<int:item_id>/update/', views.update_order_item, name='update_order_item'),
-    path('order/<int:order_id>/settle/', views.settle_order, name='settle_order'),
 
     path("managecategories", views.managecategories, name='managecategories'),
     path("manageitems", views.manageitems, name='manageitems'),
@@ -31,7 +28,4 @@ urlpatterns = [
     path('orderhistory/', views.orderhistory, name='orderhistory'),
     path('salesreport/', views.salesreport, name='salesreport'),
     path('settings/', views.settings, name='settings'),
-
-
-
 ]

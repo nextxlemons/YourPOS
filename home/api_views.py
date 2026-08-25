@@ -1,7 +1,7 @@
 from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
 from django.utils import timezone
@@ -14,7 +14,34 @@ from .serializers import (
 )
 
 
-# sign login auth
+# ---------- Signup / Auth ----------
+
+
+
+class LoginAPI(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username', '').strip()
+        password = request.data.get('password', '')
+
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return Response({'error': 'Invalid username or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not hasattr(user, 'cafe'):
+            return Response({'error': "This account isn't linked to a café."}, status=status.HTTP_403_FORBIDDEN)
+
+        login(request, user)
+        return Response({'cafe_name': user.cafe.name, 'username': user.username})
+
+
+class LogoutAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return Response({'success': True})
 
 class SignupAPI(APIView):
     permission_classes = [permissions.AllowAny]
@@ -25,15 +52,52 @@ class SignupAPI(APIView):
         result = serializer.save()
         user = result['user']
 
-        refresh = RefreshToken.for_user(user)
+        login(request, user)  # establishes the session cookie, same as your template login_view
+
         return Response({
             'cafe_name': result['cafe'].name,
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
+            'username': user.username,
         }, status=status.HTTP_201_CREATED)
 
 
-# table
+
+# ---------- Login / Logout ----------
+
+class LoginAPI(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username', '').strip()
+        password = request.data.get('password', '')
+
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not hasattr(user, 'cafe'):
+            return Response({'error': "This account isn't linked to a café"}, status=status.HTTP_403_FORBIDDEN)
+
+        login(request, user)
+        return Response({'cafe_name': user.cafe.name, 'username': user.username})
+
+
+class LogoutAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return Response({'success': True})
+
+
+class SessionStatusAPI(APIView):
+    """Lets the frontend check 'am I logged in, and to which cafe' on page load if needed."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        if request.user.is_authenticated and hasattr(request.user, 'cafe'):
+            return Response({'authenticated': True, 'cafe_name': request.user.cafe.name})
+        return Response({'authenticated': False})
+
+# ---------- Tables ----------
 
 class TableListAPI(generics.ListAPIView):
     serializer_class = TableInfoSerializer
@@ -44,21 +108,19 @@ class TableListAPI(generics.ListAPIView):
 
 
 class TableCreateAPI(APIView):
+    """Auto-increments table_no per cafe — matches the template-based `orders` view's behavior."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        table_no = request.data.get('table_no')
-        if not table_no:
-            return Response({'error': 'table_no is required'}, status=status.HTTP_400_BAD_REQUEST)
+        cafe = request.user.cafe
+        last_table = TableInfo.objects.filter(cafe=cafe).order_by('-table_no').first()
+        next_table_no = (last_table.table_no + 1) if last_table else 1
 
-        if TableInfo.objects.filter(cafe=request.user.cafe, table_no=table_no).exists():
-            return Response({'error': 'Table already exists'}, status=status.HTTP_400_BAD_REQUEST)
-
-        table = TableInfo.objects.create(cafe=request.user.cafe, table_no=table_no)
+        table = TableInfo.objects.create(cafe=cafe, table_no=next_table_no)
         return Response(TableInfoSerializer(table).data, status=status.HTTP_201_CREATED)
 
 
-# MENU categories
+# ---------- Menu categories ----------
 
 class MenuCategoryListAPI(generics.ListAPIView):
     serializer_class = MenuCategorySerializer
@@ -83,18 +145,38 @@ class MenuCategoryCreateAPI(APIView):
         return Response(MenuCategorySerializer(category).data, status=status.HTTP_201_CREATED)
 
 
-# menu items and all
+class MenuCategoryUpdateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        category = get_object_or_404(MenuCategory, pk=pk, cafe=request.user.cafe)
+        new_name = request.data.get('name', '').strip()
+        if not new_name:
+            return Response({'error': 'name is required'}, status=status.HTTP_400_BAD_REQUEST)
+        category.name = new_name
+        category.save()
+        return Response(MenuCategorySerializer(category).data)
+
+
+class MenuCategoryDeleteAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        category = get_object_or_404(MenuCategory, pk=pk, cafe=request.user.cafe)
+        category.delete()
+        return Response({'success': True})
+
+
+# ---------- Menu items ----------
 
 class MenuItemListAPI(generics.ListAPIView):
     serializer_class = MenuItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # scoped through category__cafe since MenuItem has no direct cafe FK
         qs = MenuItem.objects.filter(
             category__cafe=self.request.user.cafe, is_active=True
-        ).select_related('category').prefetch_related('variants')
-
+        ).select_related('category').prefetch_related('variants').order_by('name')
         category_id = self.request.query_params.get('category')
         if category_id:
             qs = qs.filter(category_id=category_id)
@@ -106,10 +188,80 @@ class MenuItemDetailAPI(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return MenuItem.objects.filter(category__cafe=self.request.user.cafe)
+        return MenuItem.objects.filter(category__cafe=self.request.user.cafe).prefetch_related('variants')
 
 
-# orders 
+class MenuItemCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        cafe = request.user.cafe
+        name = request.data.get('name', '').strip()
+        category = get_object_or_404(MenuCategory, pk=request.data.get('category'), cafe=cafe)
+        has_variants = bool(request.data.get('has_variants'))
+        is_active = bool(request.data.get('is_active', True))
+
+        if not name:
+            return Response({'error': 'name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        item = MenuItem.objects.create(name=name, category=category, is_active=is_active)
+
+        if has_variants:
+            price_s = request.data.get('variant_price_s')
+            price_l = request.data.get('variant_price_l')
+            if price_s:
+                MenuVariant.objects.create(item=item, size='S', price=price_s)
+            if price_l:
+                MenuVariant.objects.create(item=item, size='L', price=price_l)
+        else:
+            price_d = request.data.get('variant_price_d')
+            if not price_d:
+                item.delete()
+                return Response({'error': 'variant_price_d is required'}, status=status.HTTP_400_BAD_REQUEST)
+            MenuVariant.objects.create(item=item, size='D', price=price_d)
+
+        return Response(MenuItemSerializer(item).data, status=status.HTTP_201_CREATED)
+
+
+class MenuItemUpdateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        cafe = request.user.cafe
+        item = get_object_or_404(MenuItem, pk=pk, category__cafe=cafe)
+
+        item.name = request.data.get('name', item.name).strip()
+        item.category = get_object_or_404(MenuCategory, pk=request.data.get('category'), cafe=cafe)
+        item.is_active = bool(request.data.get('is_active', item.is_active))
+        has_variants = bool(request.data.get('has_variants'))
+        item.save()
+
+        item.variants.all().delete()
+        if has_variants:
+            price_s = request.data.get('variant_price_s')
+            price_l = request.data.get('variant_price_l')
+            if price_s:
+                MenuVariant.objects.create(item=item, size='S', price=price_s)
+            if price_l:
+                MenuVariant.objects.create(item=item, size='L', price=price_l)
+        else:
+            price_d = request.data.get('variant_price_d')
+            if price_d:
+                MenuVariant.objects.create(item=item, size='D', price=price_d)
+
+        return Response(MenuItemSerializer(item).data)
+
+
+class MenuItemDeleteAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        item = get_object_or_404(MenuItem, pk=pk, category__cafe=request.user.cafe)
+        item.delete()
+        return Response({'success': True})
+
+# ---------- Orders ----------
+
 class OrderDetailAPI(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -140,8 +292,6 @@ class AddOrderItemAPI(APIView):
         )
 
         variant_id = request.data.get('variant_id')
-        # scope variant lookup through item__category__cafe so you can't add another
-        # cafe's menu item to your order even by guessing an ID
         variant = get_object_or_404(
             MenuVariant, pk=variant_id, item__category__cafe=request.user.cafe
         )
@@ -168,21 +318,19 @@ class UpdateOrderItemAPI(APIView):
             OrderItem, pk=item_id, order__table__cafe=request.user.cafe
         )
         order = item.order
-        action = request.data.get('action')
+        action = request.data.get("action")
 
-        if action == 'inc':
+        if action == "inc":
             item.quantity += 1
             item.save()
-        elif action == 'dec':
+        elif action == "dec":
             item.quantity -= 1
             if item.quantity <= 0:
                 item.delete()
             else:
                 item.save()
-        elif action == 'remove':
+        elif action == "remove":
             item.delete()
-        else:
-            return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not order.items.exists():
             order.table.status = TableInfo.Status.AVAILABLE
@@ -190,7 +338,8 @@ class UpdateOrderItemAPI(APIView):
 
         return Response(OrderSerializer(order).data)
 
-# bill generation
+
+# ---------- Billing ----------
 
 def generate_bill_number(cafe, table_no):
     """Bill numbers are unique per cafe, not globally."""
@@ -256,7 +405,7 @@ class BillDetailAPI(generics.RetrieveAPIView):
         return Bill.objects.filter(cafe=self.request.user.cafe)
 
 
-# reports
+# ---------- Reports ----------
 
 class SalesReportAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -274,3 +423,5 @@ class SalesReportAPI(APIView):
             'weekly': agg(Bill.objects.filter(cafe=cafe, created_at__date__gte=week_start)),
             'monthly': agg(Bill.objects.filter(cafe=cafe, created_at__date__gte=month_start)),
         })
+
+

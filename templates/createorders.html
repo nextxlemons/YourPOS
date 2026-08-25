@@ -17,13 +17,14 @@
         <div class="col-2">
             <h5>Category</h5>
             <table class="table table-dark table-striped table-borderless table-hover">
-                <tbody>
+                <tbody id="category-rows"></tbody>
+                {% comment %} <tbody>
                     {% for category in categories %}
                     <tr class="category-row" data-id="{{ category.id }}" style="cursor:pointer;">
                         <td>{{ category.name }}</td>
                     </tr>
                     {% endfor %}
-                </tbody>
+                </tbody> {% endcomment %}
             </table>
         </div>
         <div class="col-auto px-0 d-flex align-items-stretch">
@@ -74,60 +75,65 @@
 </div>
 
 <script>
+
 const ORDER_ID = {{ order.id }};
 const CSRF_TOKEN = "{{ csrf_token }}";
-
 
 function apiPost(url, body) {
     return fetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": CSRF_TOKEN,           // using SessionAuthentication not jwt 
+            "X-CSRFToken": CSRF_TOKEN,   // SessionAuthentication, not JWT
         },
         body: JSON.stringify(body)
     }).then(res => res.json());
 }
 
-apiPost(`/api/orders/${ORDER_ID}/add-item/`, { variant_id: btn.dataset.variantId });
+function apiGet(url) {
+    return fetch(url, {
+        headers: { "X-CSRFToken": CSRF_TOKEN }
+    }).then(res => res.json());
+}
 
 function refreshBill(data) {
     let tbody = document.getElementById("bill");
     tbody.innerHTML = "";
 
-    if (data.items.length === 0) {
+    if (!data.items || data.items.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="text-center text-light">No items yet</td></tr>`;
     }
 
-    data.items.forEach(item => {
+    (data.items || []).forEach(item => {
+        const subtotal = parseFloat(item.subtotal);
         tbody.innerHTML += `
             <tr>
-                <td>${item.name} (${item.size})</td>
+                <td>${item.item_name} (${item.size_display})</td>
                 <td>
                     <button class="btn btn-sm btn-outline-secondary qty-btn" data-id="${item.id}" data-action="dec">-</button>
                     ${item.quantity}
                     <button class="btn btn-sm btn-outline-secondary qty-btn" data-id="${item.id}" data-action="inc">+</button>
                 </td>
-                <td>₹${item.subtotal.toFixed(2)}</td>
+                <td>₹${subtotal.toFixed(2)}</td>
                 <td><button class="btn btn-sm btn-outline-danger remove-btn" data-id="${item.id}">&times;</button></td>
             </tr>`;
     });
 
-    tbody.innerHTML += `<tr class="table-primary"><th colspan="2">Total</th><th colspan="2">₹${data.total.toFixed(2)}</th></tr>`;
+    const total = parseFloat(data.total || 0);
+    tbody.innerHTML += `<tr class="table-primary"><th colspan="2">Total</th><th colspan="2">₹${total.toFixed(2)}</th></tr>`;
     document.getElementById("bill-error").innerText = "";
 
     document.querySelectorAll(".qty-btn").forEach(btn => {
-        btn.onclick = () => post(`/order-item/${btn.dataset.id}/update/`, `action=${btn.dataset.action}`).then(refreshBill);
+        btn.onclick = () => apiPost(`/api/order-items/${btn.dataset.id}/update/`, { action: btn.dataset.action }).then(refreshBill);
     });
     document.querySelectorAll(".remove-btn").forEach(btn => {
-        btn.onclick = () => post(`/order-item/${btn.dataset.id}/update/`, `action=remove`).then(refreshBill);
+        btn.onclick = () => apiPost(`/api/order-items/${btn.dataset.id}/update/`, { action: "remove" }).then(refreshBill);
     });
 }
 
 document.querySelectorAll(".category-row").forEach(row => {
     row.addEventListener("click", function () {
-        fetch(`/category/${this.dataset.id}/items/`)
-        .then(res => res.json())
+        apiGet(`/api/menu-items/?category=${this.dataset.id}`)
         .then(data => {
             let tbody = document.getElementById("items-body");
             tbody.innerHTML = "";
@@ -142,36 +148,33 @@ document.querySelectorAll(".category-row").forEach(row => {
                     </div>`;
             });
             document.querySelectorAll(".variant-btn").forEach(btn => {
-                btn.onclick = () => post(`/order/${ORDER_ID}/add-item/`, `variant_id=${btn.dataset.variantId}`).then(refreshBill);
+                btn.onclick = () => apiPost(`/api/orders/${ORDER_ID}/add-item/`, { variant_id: btn.dataset.variantId }).then(refreshBill);
             });
         });
     });
 });
-
 
 document.querySelectorAll(".payment-btn").forEach(btn => {
     btn.onclick = function () {
         if (!confirm(`Settle bill with ${this.dataset.method}?`)) return;
 
         const note = document.getElementById("note-input").value;
-        const body = `payment_method=${encodeURIComponent(this.dataset.method)}&note=${encodeURIComponent(note)}`;
 
-        post(`/order/${ORDER_ID}/settle/`, body).then(data => {
+        apiPost(`/api/orders/${ORDER_ID}/settle/`, { payment_method: this.dataset.method, note: note })
+        .then(data => {
             if (data.error) {
                 document.getElementById("bill-error").innerText = data.error;
-                window.location.href = data.redirect;
             } else {
-                window.location.href = data.redirect;
+                window.location.href = "/orders";
             }
         });
     };
 });
 
-
 refreshBill({
     items: [
         {% for oi in order.items.all %}
-        { id: {{ oi.id }}, name: "{{ oi.variant.item.name|escapejs }}", size: "{{ oi.variant.get_size_display }}", quantity: {{ oi.quantity }}, subtotal: {{ oi.subtotal }} },
+        { id: {{ oi.id }}, item_name: "{{ oi.variant.item.name|escapejs }}", size_display: "{{ oi.variant.get_size_display }}", quantity: {{ oi.quantity }}, subtotal: {{ oi.subtotal }} },
         {% endfor %}
     ],
     total: {{ order.total|default:0 }}

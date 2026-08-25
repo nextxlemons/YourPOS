@@ -5,35 +5,29 @@
     <div class="card bg-body-secondary text-dark shadow-lg" style="width: 100%; max-width: 420px;">
         <div class="card-body p-4">
             <h4 class="fw-bold text-center mb-4">Create Your Café Account</h4>
+            <div id="form-error" class="alert alert-danger d-none"></div>
 
-            <form method="POST">
-                {% csrf_token %}
-
+            <form id="signup-form">
                 <div class="mb-3">
                     <label class="form-label">Café Name</label>
-                    <input type="text" name="cafe_name" class="form-control" placeholder="e.g. Brew Corner" required>
+                    <input type="text" name="cafe_name" class="form-control" required>
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
+                    <input type="text" name="username" class="form-control" required>
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="you@example.com">
+                    <input type="email" name="email" class="form-control">
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Create a password" required>
+                    <input type="password" name="password" class="form-control" required>
                 </div>
-
                 <div class="mb-4">
                     <label class="form-label">Confirm Password</label>
-                    <input type="password" name="confirm_password" class="form-control" placeholder="Re-enter password" required>
+                    <input type="password" name="confirm_password" class="form-control" required>
                 </div>
-
                 <button type="submit" class="btn btn-dark w-100">Sign Up</button>
             </form>
 
@@ -43,4 +37,48 @@
         </div>
     </div>
 </div>
+
+<script>
+function getCookie(name) {
+    const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return match ? match.pop() : '';
+}
+const CSRF_TOKEN = getCookie('csrftoken');
+
+document.getElementById('signup-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const errorBox = document.getElementById('form-error');
+    errorBox.classList.add('d-none');
+
+    const formData = new FormData(this);
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirm_password');
+
+    if (password !== confirmPassword) {
+        errorBox.innerText = "Passwords do not match.";
+        errorBox.classList.remove('d-none');
+        return;
+    }
+
+    fetch('/api/auth/signup/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({
+            cafe_name: formData.get('cafe_name'),
+            username: formData.get('username'),
+            email: formData.get('email'),
+            password: password,
+        })
+    })
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+        if (ok) {
+            window.location.href = "{% url 'home' %}";
+        } else {
+            errorBox.innerText = Object.values(data).flat().join(' ');
+            errorBox.classList.remove('d-none');
+        }
+    });
+});
+</script>
 {% endblock body %}

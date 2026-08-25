@@ -7,8 +7,6 @@
     <a class="btn btn-light" href="/additems">+ New Items</a>
 </div>
 
-
-
 <hr class="border border-white border-1">
 
 <div class="container-fluid px-4">
@@ -24,7 +22,8 @@
                 <th scope="col">Operations</th>
             </tr>
         </thead>
-        <tbody class="table-group-divider">
+        <tbody id="menuitems-rows"></tbody>
+        {% comment %} <tbody class="table-group-divider">
             {% for item in items %}
             <tr>
                 <th scope="row">{{ forloop.counter }}</th>
@@ -60,9 +59,67 @@
                 </td>
             </tr>
             {% endfor %}
-        </tbody>
+        </tbody> {% endcomment %}
     </table>
     </div>
 </div>
+<script>
 
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function apiGet(url) { 
+    return fetch(url, { 
+        headers: { 'X-CSRFToken': CSRF_TOKEN } 
+    }).then(r => r.json()); 
+}
+function apiPost(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(body || {})
+    }).then(r => r.json());
+}
+function loadMenuItems() {
+    apiGet('/api/menu-items/').then(data => renderMenuItems(data.results || data));
+}
+
+
+function renderMenuItems(menuitems) {
+    const tbody = document.getElementById('menuitems-rows');
+    tbody.innerHTML = "";
+    menuitems.forEach((itm, i) => {
+        tbody.innerHTML += `
+            <tr>
+                <th>${i + 1}</th>
+                <td>
+                    <span id="display-${itm.id}">${itm.name}</span>                    
+                </td>
+                <td>
+                    <span>${ itm.category_name  }</span>
+                </td>
+                <td>
+                    <span>${ itm.variants.id  }</span>
+                </td>
+                <td class="${itm.is_active ? 'text-success' : 'text-danger'}">${itm.is_active ? 'Active' : 'Inactive'}</td>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleEdit(${itm.id})">Rename</button>
+                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteItem(${itm.id}, '${itm.name}')">Delete</button>
+                </td>
+            </tr>            
+            `;
+    });
+}
+
+function toggleEdit(id) {
+    
+}
+function deleteItem(id, name) {
+    if (!confirm(`Delete ${name}?`)) return;
+    apiPost(`/api/menu-items/${id}/delete/`).then(loadMenuItems);
+}
+
+loadMenuItems();
+
+</script>
 {% endblock body %}

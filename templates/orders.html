@@ -9,52 +9,74 @@
 <hr class="border border-white border-1">
 
 <div class="container-fluid">
-    <div class="justify-content-center d-flex flex-wrap gap-2 my-3">
-        <style>
-        .hover-card { transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
-        .hover-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.15); z-index: 10; }
-        .hover-card a { text-decoration: none; color: inherit; }
-        </style>
-        {% for item in items %}
-        <div class="card d-inline-flex m-1 hover-card">
-            <a href="{% url 'createorders' item.pk %}">
-            <div class="card-header">Table : {{ item.table_no }}</div>
-            {% if item.status == "A" %}
-                <div class="card-body text-success">{{ item.get_status_display }}</div>
-            {% elif item.status == "O" %}
-                <div class="card-body text-danger">{{ item.get_status_display }}</div>
-            {% endif %}
-            </a>
-        </div>
-        {% endfor %}
-    </div>
+    <div id="table-grid" class="justify-content-center d-flex flex-wrap gap-2 my-3"></div>
 </div>
 
-<!-- Add Table Modal -->
-<div class="modal fade" id="addTableModal" tabindex="-1" aria-labelledby="addTableModalLabel" aria-hidden="true">
+<div class="modal fade" id="addTableModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="POST">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addTableModalLabel">Add New Table</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p class="mb-0">This will add the next available table number automatically.</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-dark" type="submit" name="action" value="add_table">Add Table</button>
-        </div>
-      </form>
+      <div class="modal-header">
+        <h5 class="modal-title">Add New Table</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">This will add the next available table number automatically.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-dark" id="confirm-add-table">Add Table</button>
+      </div>
     </div>
   </div>
 </div>
 
+<style>
+.hover-card { transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
+.hover-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.15); z-index: 10; }
+.hover-card a { text-decoration: none; color: inherit; }
+</style>
+
 <script>
-document.getElementById('addTableModal').addEventListener('shown.bs.modal', function () {
-    document.getElementById('tableNoInput').focus();
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function apiGet(url) {
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json());
+}
+
+function apiPost(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(body || {})
+    }).then(r => r.json());
+}
+
+function renderTables(tables) {
+    const grid = document.getElementById('table-grid');
+    grid.innerHTML = "";
+    tables.forEach(t => {
+        const statusClass = t.status === 'A' ? 'text-success' : 'text-danger';
+        grid.innerHTML += `
+            <div class="card d-inline-flex m-1 hover-card">
+                <a href="/createorders/${t.table_no}/">
+                    <div class="card-header">Table : ${t.table_no}</div>
+                    <div class="card-body ${statusClass}">${t.status_display}</div>
+                </a>
+            </div>`;
+    });
+}
+
+function loadTables() {
+    apiGet('/api/tables/').then(data => renderTables(data.results || data));
+}
+
+document.getElementById('confirm-add-table').addEventListener('click', function () {
+    apiPost('/api/tables/create/').then(() => {
+        bootstrap.Modal.getInstance(document.getElementById('addTableModal')).hide();
+        loadTables();
+    });
 });
+
+loadTables();
 </script>
 {% endblock body %}

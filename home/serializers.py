@@ -47,12 +47,12 @@ class MenuCategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'is_active']
 
 
+
 class TableInfoSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-
     class Meta:
         model = TableInfo
-        fields = ['table_no', 'status', 'status_display']
+        fields = ['id', 'table_no', 'status', 'status_display']
 
 
 class OrderItemSerializer(serializers.ModelSerializer):

@@ -5,20 +5,17 @@
     <div class="card bg-body-secondary text-dark shadow-lg" style="width: 100%; max-width: 420px;">
         <div class="card-body p-4">
             <h4 class="fw-bold text-center mb-4">Login to YourPOS</h4>
+            <div id="form-error" class="alert alert-danger d-none"></div>
 
-            <form method="POST">
-                {% csrf_token %}
-
+            <form id="login-form">
                 <div class="mb-3">
                     <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Your username" required autofocus>
+                    <input type="text" name="username" class="form-control" required autofocus>
                 </div>
-
                 <div class="mb-4">
                     <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Your password" required>
+                    <input type="password" name="password" class="form-control" required>
                 </div>
-
                 <button type="submit" class="btn btn-dark w-100">Log In</button>
             </form>
 
@@ -28,4 +25,38 @@
         </div>
     </div>
 </div>
+
+<script>
+function getCookie(name) {
+    const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return match ? match.pop() : '';
+}
+const CSRF_TOKEN = getCookie('csrftoken');
+
+document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const errorBox = document.getElementById('form-error');
+    errorBox.classList.add('d-none');
+
+    const formData = new FormData(this);
+
+    fetch('/api/auth/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({
+            username: formData.get('username'),
+            password: formData.get('password'),
+        })
+    })
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+        if (ok) {
+            window.location.href = "{% url 'home' %}";
+        } else {
+            errorBox.innerText = data.error || "Login failed.";
+            errorBox.classList.remove('d-none');
+        }
+    });
+});
+</script>
 {% endblock body %}

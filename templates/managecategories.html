@@ -1,96 +1,110 @@
 {% extends "base.html" %}
-{% block title %}Manage Category{% endblock title %}
+{% block title %}Manage Categories{% endblock title %}
 {% block body %}
 <hr class="border border-light border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
-    <h5>Manage Category</h5>
+    <h5>Manage Categories</h5>
     <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addCategoryModal">+ New Category</button>
 </div>
 <hr class="border border-white border-1">
 
 <div class="container-fluid px-4">
     <div class="container my-4 mx-auto">
-    <table class="table table-dark table-striped table-bordered table-striped">
-        <thead>
-            <tr>
-                <th scope="col">No.</th>
-                <th scope="col">Category Name</th>
-                <th scope="col">Status</th>
-                <th scope="col">Operations</th>
-            </tr>
-        </thead>
-        <tbody class="table-group-divider">
-            {% for item in items %}
-            <tr>
-                <th scope="row">{{ forloop.counter }}</th>
-                <td>
-                    <span id="display-{{ item.name|slugify }}">{{ item.name }}</span>
-                    <form id="form-{{ item.name|slugify }}" method="POST" class="d-none">
-                        {% csrf_token %}
-                        <input type="hidden" name="old_name" value="{{ item.name }}">
-                        <div class="input-group input-group-sm">
-                            <input type="text" name="new_name" value="{{ item.name }}" class="form-control">
-                            <button type="submit" name="action" value="rename_category" class="btn btn-success mx-2">Save</button>
-                        </div>
-                    </form>
-                </td>
-                <td>
-                    <span class="{% if item.is_active %}text-success{% else %}text-danger{% endif %}">
-                        {{ item.is_active|yesno:"Active,Inactive" }}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="toggleEdit('{{ item.name|slugify }}')">Rename</button>
-                    <form method="POST" class="d-inline" onsubmit="return confirm('Delete {{ item.name }}?')">
-                        {% csrf_token %}
-                        <input type="hidden" name="category_name" value="{{ item.name }}">
-                        <button type="submit" name="action" value="delete_category" class="btn btn-sm btn-outline-danger ms-1">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <table class="table table-bordered border-dark table-striped">
+            <thead>
+                <tr><th>#</th><th>Category Name</th><th>Status</th><th>Operations</th></tr>
+            </thead>
+            <tbody id="category-rows"></tbody>
+        </table>
     </div>
 </div>
 
-<!-- Add Category Modal -->
-<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="POST">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <label class="form-label">Category Name</label>
-          <input type="text" name="name" id="categoryNameInput" class="form-control" placeholder="Enter category name" required>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-dark" type="submit" name="action" value="add_category">Add</button>
-        </div>
-      </form>
+      <div class="modal-header">
+        <h5 class="modal-title">Add New Category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="new-category-name" class="form-control" placeholder="Enter category name">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-dark" id="confirm-add-category">Add</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-<!--  add category -->
-document.getElementById('addCategoryModal').addEventListener('shown.bs.modal', function () {
-    document.getElementById('categoryNameInput').focus();
-});
-<!-- rename category -->
-function toggleEdit(slugName) {
-    document.getElementById('display-' + slugName).classList.add('d-none');
-    const form = document.getElementById('form-' + slugName);
-    form.classList.remove('d-none');
-    form.classList.add('d-inline-flex');
-    const input = form.querySelector('input[name="new_name"]');
-    input.focus();
-    input.select();
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function apiGet(url) { 
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json()); 
 }
+function apiPost(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(body || {})
+    }).then(r => r.json());
+}
+
+function loadCategories() {
+    apiGet('/api/categories/').then(data => renderCategories(data.results || data));
+}
+
+function renderCategories(categories) {
+    const tbody = document.getElementById('category-rows');
+    tbody.innerHTML = "";
+    categories.forEach((cat, i) => {
+        tbody.innerHTML += `
+            <tr>
+                <th>${i + 1}</th>
+                <td>
+                    <span id="display-${cat.id}">${cat.name}</span>
+                    <div id="form-${cat.id}" class="d-none input-group input-group-sm">
+                        <input type="text" id="rename-input-${cat.id}" value="${cat.name}" class="form-control">
+                        <button class="btn btn-success mx-2" onclick="renameCategory(${cat.id})">Save</button>
+                    </div>
+                </td>
+                <td class="${cat.is_active ? 'text-success' : 'text-danger'}">${cat.is_active ? 'Active' : 'Inactive'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleEdit(${cat.id})">Rename</button>
+                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteCategory(${cat.id}, '${cat.name}')">Delete</button>
+                </td>
+            </tr>`;
+    });
+}
+
+function toggleEdit(id) {
+    document.getElementById('display-' + id).classList.add('d-none');
+    document.getElementById('form-' + id).classList.remove('d-none');
+    document.getElementById('form-' + id).classList.add('d-inline-flex');
+}
+
+function renameCategory(id) {
+    const newName = document.getElementById('rename-input-' + id).value;
+    apiPost(`/api/categories/${id}/update/`, { name: newName }).then(loadCategories);
+}
+
+function deleteCategory(id, name) {
+    if (!confirm(`Delete ${name}?`)) return;
+    apiPost(`/api/categories/${id}/delete/`).then(loadCategories);
+}
+
+document.getElementById('confirm-add-category').addEventListener('click', function () {
+    const name = document.getElementById('new-category-name').value.trim();
+    if (!name) return;
+    apiPost('/api/categories/create/', { name }).then(data => {
+        if (data.error) { alert(data.error); return; }
+        bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+        document.getElementById('new-category-name').value = "";
+        loadCategories();
+    });
+});
+
+loadCategories();
 </script>
 {% endblock body %}
