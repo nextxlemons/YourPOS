@@ -1,5 +1,3 @@
-
-
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock title %}
 {% block body %}
@@ -17,7 +15,7 @@
             <div class="card bg-body-secondary text-dark h-100">
                 <div class="card-body text-center">
                     <h6 class="text-muted mb-1">Today's Sales</h6>
-                    <h3 class="fw-bold text-success">₹{{ today_total }}</h3>
+                    <h3 class="fw-bold text-success" id="today-total">₹0</h3>
                 </div>
             </div>
         </div>
@@ -25,7 +23,7 @@
             <div class="card bg-body-secondary text-dark h-100">
                 <div class="card-body text-center">
                     <h6 class="text-muted mb-1">Bills Settled Today</h6>
-                    <h3 class="fw-bold text-primary">{{ today_count }}</h3>
+                    <h3 class="fw-bold text-primary" id="today-count">0</h3>
                 </div>
             </div>
         </div>
@@ -33,7 +31,7 @@
             <div class="card bg-body-secondary text-dark h-100">
                 <div class="card-body text-center">
                     <h6 class="text-muted mb-1">Tables Occupied</h6>
-                    <h3 class="fw-bold text-danger">{{ occupied_count }} / {{ total_tables }}</h3>
+                    <h3 class="fw-bold text-danger" id="occupied-ratio">0 / 0</h3>
                 </div>
             </div>
         </div>
@@ -45,22 +43,11 @@
         <div class="col-md-6">
             <div class="card bg-body-secondary text-dark h-100">
                 <div class="card-header fw-semibold">Most Recent Bill</div>
-                <div class="card-body">
-                    {% if recent_bill %}
-                        <p class="mb-1"><strong>Bill No:</strong> {{ recent_bill.bill_number }}</p>
-                        <p class="mb-1"><strong>Table:</strong> {{ recent_bill.table.table_no }}</p>
-                        <p class="mb-1"><strong>Amount:</strong> ₹{{ recent_bill.total_amount }}</p>
-                        <p class="mb-1"><strong>Payment:</strong> {{ recent_bill.get_payment_method_display }}</p>
-                        <p class="mb-1"><strong>Time:</strong> {{ recent_bill.created_at|date:"d-m-Y" }} at {{ recent_bill.created_at|time:"H:i" }}</p>
-                        {% if recent_bill.note %}
-                        <p class="mb-0"><strong>Note:</strong> {{ recent_bill.note }}</p>
-                        {% endif %}
-                    {% else %}
-                        <p class="text-muted mb-0">No bills settled yet.</p>
-                    {% endif %}
+                <div class="card-body" id="recent-bill-body">
+                    <p class="text-muted mb-0">Loading...</p>
                 </div>
                 <div class="card-footer text-end">
-                    <a href="{% url 'orderhistory' %}" class="btn btn-sm btn-outline-dark">View Full History</a>
+                    <a href="/orderhistory/" class="btn btn-sm btn-outline-dark">View Full History</a>
                 </div>
             </div>
         </div>
@@ -69,27 +56,73 @@
         <div class="col-md-6">
             <div class="card bg-body-secondary text-dark h-100">
                 <div class="card-header fw-semibold">Occupied Tables</div>
-                <div class="card-body">
-                    {% if occupied_tables %}
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for table in occupied_tables %}
-                            <a href="{% url 'createorders' table.pk %}" class="btn btn-outline-danger btn-sm">
-                                Table {{ table.table_no }}
-                            </a>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted mb-0">All tables are available.</p>
-                    {% endif %}
+                <div class="card-body" id="occupied-tables-body">
+                    <p class="text-muted mb-0">Loading...</p>
                 </div>
                 <div class="card-footer text-end">
-                    <a href="{% url 'orders' %}" class="btn btn-sm btn-outline-dark">View All Tables</a>
+                    <a href="/orders/" class="btn btn-sm btn-outline-dark">View All Tables</a>
                 </div>
             </div>
         </div>
 
     </div>
 </div>
+
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function apiGet(url) {
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json());
+}
+
+function formatDateTime(isoString) {
+    const d = new Date(isoString);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} at ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// Today's sales + bill count
+apiGet('/api/reports/sales/').then(data => {
+    document.getElementById('today-total').innerText = `₹${data.daily.total || 0}`;
+    document.getElementById('today-count').innerText = data.daily.count || 0;
+});
+
+// Tables: occupied count + occupied table buttons
+apiGet('/api/tables/').then(data => {
+    const tables = data.results || data;
+    const occupied = tables.filter(t => t.status === 'O');
+
+    document.getElementById('occupied-ratio').innerText = `${occupied.length} / ${tables.length}`;
+
+    const body = document.getElementById('occupied-tables-body');
+    if (occupied.length === 0) {
+        body.innerHTML = `<p class="text-muted mb-0">All tables are available.</p>`;
+    } else {
+        body.innerHTML = `<div class="d-flex flex-wrap gap-2">` +
+            occupied.map(t => `<a href="/createorders/${t.id}/" class="btn btn-outline-danger btn-sm">Table ${t.table_no}</a>`).join("") +
+            `</div>`;
+    }
+});
+
+// Most recent bill
+apiGet('/api/bills/').then(data => {
+    const bills = data.results || data;
+    const body = document.getElementById('recent-bill-body');
+
+    if (bills.length === 0) {
+        body.innerHTML = `<p class="text-muted mb-0">No bills settled yet.</p>`;
+        return;
+    }
+
+    const bill = bills[0];  // BillListAPI is already ordered by -created_at
+    body.innerHTML = `
+        <p class="mb-1"><strong>Bill No:</strong> ${bill.bill_number}</p>
+        <p class="mb-1"><strong>Table:</strong> ${bill.table_no}</p>
+        <p class="mb-1"><strong>Amount:</strong> ₹${bill.total_amount}</p>
+        <p class="mb-1"><strong>Payment:</strong> ${bill.payment_method_display}</p>
+        <p class="mb-1"><strong>Time:</strong> ${formatDateTime(bill.created_at)}</p>
+        ${bill.note ? `<p class="mb-0"><strong>Note:</strong> ${bill.note}</p>` : ""}
+    `;
+});
+</script>
 {% endblock body %}
-
-

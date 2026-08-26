@@ -89,16 +89,27 @@ function renameCategory(id) {
     apiPost(`/api/categories/${id}/update/`, { name: newName }).then(loadCategories);
 }
 
+
 function deleteCategory(id, name) {
     if (!confirm(`Delete ${name}?`)) return;
-    apiPost(`/api/categories/${id}/delete/`).then(loadCategories);
+    apiPost(`/api/categories/${id}/delete/`).then(data => {
+        if (data.error) {
+            showMessage(data.error, 'danger');
+            return;
+        }
+        showMessage(`Category '${name}' deleted successfully.`);
+        loadCategories();
+    });
 }
-
 document.getElementById('confirm-add-category').addEventListener('click', function () {
     const name = document.getElementById('new-category-name').value.trim();
     if (!name) return;
     apiPost('/api/categories/create/', { name }).then(data => {
-        if (data.error) { alert(data.error); return; }
+        if (data.error) {
+            showMessage(data.error, 'danger');
+            return;
+        }
+        showMessage(`Category '${data.name}' added successfully.`);
         bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
         document.getElementById('new-category-name').value = "";
         loadCategories();
@@ -106,5 +117,6 @@ document.getElementById('confirm-add-category').addEventListener('click', functi
 });
 
 loadCategories();
+
 </script>
 {% endblock body %}

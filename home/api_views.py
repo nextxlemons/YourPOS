@@ -175,11 +175,17 @@ class MenuItemListAPI(generics.ListAPIView):
 
     def get_queryset(self):
         qs = MenuItem.objects.filter(
-            category__cafe=self.request.user.cafe, is_active=True
+            category__cafe=self.request.user.cafe
         ).select_related('category').prefetch_related('variants').order_by('name')
+
         category_id = self.request.query_params.get('category')
         if category_id:
             qs = qs.filter(category_id=category_id)
+
+        active_only = self.request.query_params.get('active_only')
+        if active_only == 'true':
+            qs = qs.filter(is_active=True)
+
         return qs
 
 

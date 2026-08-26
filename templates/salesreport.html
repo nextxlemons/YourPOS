@@ -4,18 +4,18 @@
 
 <hr class="border border-light border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
-    <h5> Sales Report</h5>
+    <h5>Sales Report</h5>
 </div>
 <hr class="border border-white border-1">
 
 <div class="container-fluid">
-    <div class="row">
+    <div class="row" id="report-cards">
         <div class="col-4">
             <div class="card text-center">
                 <div class="card-header">Today</div>
                 <div class="card-body">
-                    <h5>₹{{ daily.total|default:0 }}</h5>
-                    <p>{{ daily.count }} orders</p>
+                    <h5 id="daily-total">₹0</h5>
+                    <p id="daily-count">0 orders</p>
                 </div>
             </div>
         </div>
@@ -23,8 +23,8 @@
             <div class="card text-center">
                 <div class="card-header">This Week</div>
                 <div class="card-body">
-                    <h5>₹{{ weekly.total|default:0 }}</h5>
-                    <p>{{ weekly.count }} orders</p>
+                    <h5 id="weekly-total">₹0</h5>
+                    <p id="weekly-count">0 orders</p>
                 </div>
             </div>
         </div>
@@ -32,11 +32,30 @@
             <div class="card text-center">
                 <div class="card-header">This Month</div>
                 <div class="card-body">
-                    <h5>₹{{ monthly.total|default:0 }}</h5>
-                    <p>{{ monthly.count }} orders</p>
+                    <h5 id="monthly-total">₹0</h5>
+                    <p id="monthly-count">0 orders</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function apiGet(url) {
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json());
+}
+
+apiGet('/api/reports/sales/').then(data => {
+    document.getElementById('daily-total').innerText = `₹${data.daily.total || 0}`;
+    document.getElementById('daily-count').innerText = `${data.daily.count || 0} orders`;
+
+    document.getElementById('weekly-total').innerText = `₹${data.weekly.total || 0}`;
+    document.getElementById('weekly-count').innerText = `${data.weekly.count || 0} orders`;
+
+    document.getElementById('monthly-total').innerText = `₹${data.monthly.total || 0}`;
+    document.getElementById('monthly-count').innerText = `${data.monthly.count || 0} orders`;
+});
+</script>
 {% endblock body %}

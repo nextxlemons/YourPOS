@@ -5,7 +5,7 @@
 <div class="container-fluid">
     <div class="container-fluid d-flex justify-content-between align-items-center">
         <h4>Edit Item</h4>
-        <a class="btn btn-dark opacity-75" href="{% url 'manageitems' %}">Back</a>
+        <a class="btn btn-dark opacity-75" href="/manageitems">Back</a>
     </div>
     <hr class="border border-dark border-1 opacity-50">
 
@@ -14,71 +14,147 @@
         <div class="card-body p-4">
             <h4 class="form-label fw-semibold">Update item details.</h4>
             <hr class="border border-dark border-1 opacity-50">
-            <form method="POST">
-                {% csrf_token %}
 
+            <div id="form-error" class="text-danger mb-2"></div>
+
+            <form id="edititem-form">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Item Name</label>
-                    <input type="text" name="name" class="form-control" value="{{ item.name }}" required>
+                    <input type="text" id="name" class="form-control" required>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Category</label>
-                    <select name="category" class="form-select" required>
+                    <select id="category" class="form-select" required>
                         <option value="">-- Select Category --</option>
-                        {% for cat in categories %}
-                        <option value="{{ cat.id }}" {% if cat.id == item.category.id %}selected{% endif %}>
-                            {{ cat.name }}
-                        </option>
-                        {% endfor %}
                     </select>
                 </div>
 
                 <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="hasVariants" name="has_variants"
-                        {% if has_variants %}checked{% endif %}> 
+                    <input type="checkbox" class="form-check-input" id="hasVariants">
                     <label class="form-check-label fw-semibold" for="hasVariants">Has size variants (S / L)</label>
                 </div>
 
-                <div class="mb-3 {% if has_variants %}d-none{% endif %}" id="defaultPriceSection">
-                    <label class="form-label fw-semibold">Default Price(₹)</label>
-                    <input type="number" name="variant_price_d" class="form-control"
-                        value="{{ variants.D }}" placeholder="Price (₹)" step="0.01" min="0">
+                <div class="mb-3" id="defaultPriceSection">
+                    <label class="form-label fw-semibold">Default Price (₹)</label>
+                    <input type="number" id="variant_price_d" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
                 </div>
 
-                <div class="mb-3 {% if not has_variants %}d-none{% endif %}" id="variantSection">
+                <div class="mb-3 d-none" id="variantSection">
                     <label class="form-label fw-semibold">Variants</label>
                     <div class="d-flex gap-2 mb-2">
                         <label class="form-label w-auto my-auto">Small</label>
-                        <input type="number" name="variant_price_s" class="form-control"
-                            value="{{ variants.S }}" placeholder="Price (₹)" step="0.01" min="0">
+                        <input type="number" id="variant_price_s" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
                     </div>
                     <div class="d-flex gap-2">
                         <label class="form-label w-auto my-auto">Large</label>
-                        <input type="number" name="variant_price_l" class="form-control"
-                            value="{{ variants.L }}" placeholder="Price (₹)" step="0.01" min="0">
+                        <input type="number" id="variant_price_l" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
                     </div>
                 </div>
 
                 <div class="mb-4 form-check">
-                    <input type="checkbox" class="form-check-input" id="isActive" name="is_active"
-                        {% if item.is_active %}checked{% endif %}>
+                    <input type="checkbox" class="form-check-input" id="isActive">
                     <label class="form-check-label fw-semibold" for="isActive">Active</label>
                 </div>
 
                 <button type="submit" class="btn btn-primary px-4">Update Item</button>
-                <a href="{% url 'manageitems' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                <a href="/manageitems" class="btn btn-outline-secondary ms-2">Cancel</a>
             </form>
         </div>
         </div>
     </div>
-
 </div>
 
 <script>
-    document.getElementById('hasVariants').addEventListener('change', function () {
-        document.getElementById('defaultPriceSection').classList.toggle('d-none', this.checked);
-        document.getElementById('variantSection').classList.toggle('d-none', !this.checked);
+const CSRF_TOKEN = "{{ csrf_token }}";
+const ITEM_ID = {{ item_id }};
+
+function apiGet(url) {
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json());
+}
+function apiPost(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(body || {})
+    }).then(res => res.json().then(data => ({ ok: res.ok, data })));
+}
+
+function toggleVariantSections(hasVariants) {
+    document.getElementById('defaultPriceSection').classList.toggle('d-none', hasVariants);
+    document.getElementById('variantSection').classList.toggle('d-none', !hasVariants);
+}
+
+document.getElementById('hasVariants').addEventListener('change', function () {
+    toggleVariantSections(this.checked);
+});
+
+// Load categories, then load the item, so the <select> has options
+// available by the time we need to mark one as selected.
+apiGet('/api/categories/').then(data => {
+    const categories = data.results || data;
+    const select = document.getElementById('category');
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        select.appendChild(opt);
     });
+
+    return apiGet(`/api/menu-items/${ITEM_ID}/`);
+}).then(item => {
+    document.getElementById('name').value = item.name;
+    document.getElementById('category').value = item.category;
+    document.getElementById('isActive').checked = item.is_active;
+
+    const variants = item.variants || [];
+    const sVariant = variants.find(v => v.size === 'S');
+    const lVariant = variants.find(v => v.size === 'L');
+    const dVariant = variants.find(v => v.size === 'D');
+
+    const hasVariants = Boolean(sVariant || lVariant);
+    document.getElementById('hasVariants').checked = hasVariants;
+    toggleVariantSections(hasVariants);
+
+    if (sVariant) document.getElementById('variant_price_s').value = sVariant.price;
+    if (lVariant) document.getElementById('variant_price_l').value = lVariant.price;
+    if (dVariant) document.getElementById('variant_price_d').value = dVariant.price;
+});
+
+document.getElementById('edititem-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const errorBox = document.getElementById('form-error');
+    errorBox.innerText = "";
+
+    const hasVariants = document.getElementById('hasVariants').checked;
+
+    if (!document.getElementById('category').value) {
+        errorBox.innerText = "Please select a category.";
+        return;
+    }
+
+    const payload = {
+        name: document.getElementById('name').value.trim(),
+        category: document.getElementById('category').value,
+        has_variants: hasVariants,
+        is_active: document.getElementById('isActive').checked,
+    };
+
+    if (hasVariants) {
+        payload.variant_price_s = document.getElementById('variant_price_s').value;
+        payload.variant_price_l = document.getElementById('variant_price_l').value;
+    } else {
+        payload.variant_price_d = document.getElementById('variant_price_d').value;
+    }
+
+    apiPost(`/api/menu-items/${ITEM_ID}/update/`, payload).then(({ ok, data }) => {
+        if (ok) {
+            window.location.href = "/manageitems";
+        } else {
+            errorBox.innerText = data.error || "Failed to update item.";
+        }
+    });
+});
 </script>
 {% endblock %}

@@ -3,10 +3,9 @@
 {% block body %}
 <hr class="border border-white border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
-    <h5>Manage Items </h5>
+    <h5>Manage Items</h5>
     <a class="btn btn-light" href="/additems">+ New Items</a>
 </div>
-
 <hr class="border border-white border-1">
 
 <div class="container-fluid px-4">
@@ -23,54 +22,15 @@
             </tr>
         </thead>
         <tbody id="menuitems-rows"></tbody>
-        {% comment %} <tbody class="table-group-divider">
-            {% for item in items %}
-            <tr>
-                <th scope="row">{{ forloop.counter }}</th>
-                <td>
-                    <span id="display-{{ item.name|slugify }}">{{ item.name }}</span>                    
-                </td>
-                <td>
-                    <span>{{ item.category }}</span>
-                </td>
-                <td>
-                {% with variants=item.variants.all %}
-                    {% if variants %}
-                    {% for v in variants %}
-                        <span>₹{{ v.price }}({{ v.get_size_display }}) </span>
-                    {% endfor %}
-                    {% else %}
-                    ₹{{ item.base_price }}
-                {% endif %}
-                {% endwith %}
-                </td>
-                <td>
-                    <span class="{% if item.is_active %}text-success{% else %}text-danger{% endif %}">
-                        {{ item.is_active|yesno:"Active,Inactive" }}
-                    </span>
-                </td>
-                <td>
-                    <a href="/edititem/{{ item.pk }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                    <form method="POST" class="d-inline" onsubmit="return confirm('Delete {{ item.name }}')">
-                        {% csrf_token %}
-                        <input type="hidden" name="item_name" value="{{ item.name}}">
-                        <button type="submit" name="action" value="delete_item" class="btn btn-sm btn-outline-danger ms-1">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody> {% endcomment %}
     </table>
     </div>
 </div>
-<script>
 
+<script>
 const CSRF_TOKEN = "{{ csrf_token }}";
 
-function apiGet(url) { 
-    return fetch(url, { 
-        headers: { 'X-CSRFToken': CSRF_TOKEN } 
-    }).then(r => r.json()); 
+function apiGet(url) {
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json());
 }
 function apiPost(url, body) {
     return fetch(url, {
@@ -79,47 +39,52 @@ function apiPost(url, body) {
         body: JSON.stringify(body || {})
     }).then(r => r.json());
 }
+
+
+
 function loadMenuItems() {
     apiGet('/api/menu-items/').then(data => renderMenuItems(data.results || data));
 }
 
+function formatPrice(variants) {
+    if (!variants || variants.length === 0) return "—";
+    // If there's only one variant and it's "Default", just show the price, no label
+    if (variants.length === 1 && variants[0].size_display === "Default") {
+        return `₹${variants[0].price}`;
+    }
+    return variants.map(v => `₹${v.price} (${v.size_display})`).join(", ");
+}
 
 function renderMenuItems(menuitems) {
     const tbody = document.getElementById('menuitems-rows');
     tbody.innerHTML = "";
+
+    if (menuitems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-light">No items yet</td></tr>`;
+        return;
+    }
+
     menuitems.forEach((itm, i) => {
         tbody.innerHTML += `
             <tr>
                 <th>${i + 1}</th>
-                <td>
-                    <span id="display-${itm.id}">${itm.name}</span>                    
-                </td>
-                <td>
-                    <span>${ itm.category_name  }</span>
-                </td>
-                <td>
-                    <span>${ itm.variants.id  }</span>
-                </td>
+                <td>${itm.name}</td>
+                <td>${itm.category_name}</td>
+                <td>${formatPrice(itm.variants)}</td>
                 <td class="${itm.is_active ? 'text-success' : 'text-danger'}">${itm.is_active ? 'Active' : 'Inactive'}</td>
-                </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="toggleEdit(${itm.id})">Rename</button>
-                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteItem(${itm.id}, '${itm.name}')">Delete</button>
+                    <a href="/edititem/${itm.id}/" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteItem(${itm.id}, '${itm.name.replace(/'/g, "\\'")}')">Delete</button>
                 </td>
-            </tr>            
-            `;
+            </tr>`;
     });
 }
 
-function toggleEdit(id) {
-    
-}
 function deleteItem(id, name) {
     if (!confirm(`Delete ${name}?`)) return;
-    apiPost(`/api/menu-items/${id}/delete/`).then(loadMenuItems);
+    apiPost(`/api/menu-items/${id}/delete/`).then(() => loadMenuItems());
 }
 
 loadMenuItems();
-
 </script>
 {% endblock body %}

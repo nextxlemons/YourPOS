@@ -90,6 +90,7 @@ def additems(request):
     return render(request, 'additems.html')
 
 
+
 @cafe_login_required
 def edititem(request, pk):
     return render(request, 'edititem.html', {'item_id': pk})

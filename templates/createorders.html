@@ -4,33 +4,25 @@
 {% block body %}
 <hr class="border border-light border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
-    <h5> Table : {{table.table_no}}</h5>
-    <a class="btn btn-light" href="{% url 'orders' %}">Back</a>
+    <h5>Table : <span id="table-no-label">...</span></h5>
+    <a class="btn btn-light" href="/orders/">Back</a>
 </div>
 <hr class="border border-white border-1">
 
 <div class="container-fluid px-4">
     <div class="row align-items-stretch">
 
-
         <!-- Category -->
         <div class="col-2">
             <h5>Category</h5>
             <table class="table table-dark table-striped table-borderless table-hover">
                 <tbody id="category-rows"></tbody>
-                {% comment %} <tbody>
-                    {% for category in categories %}
-                    <tr class="category-row" data-id="{{ category.id }}" style="cursor:pointer;">
-                        <td>{{ category.name }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody> {% endcomment %}
             </table>
         </div>
         <div class="col-auto px-0 d-flex align-items-stretch">
             <div class="vr h-100"></div>
         </div>
-        
+
         <!-- Items -->
         <div class="col">
             <h5>Items</h5>
@@ -43,8 +35,8 @@
         <div class="col-auto px-0 d-flex align-items-stretch">
             <div class="vr h-100"></div>
         </div>
-        
-        <!-- Items -->
+
+        <!-- Bill -->
         <div class="col">
             <h5>Bill</h5>
             <table class="table table-dark table-striped table-borderless table-hover">
@@ -59,7 +51,7 @@
 
             <h5>Note:</h5>
             <div class="d-flex gap-2">
-                <input type="text" id="note-input" class="form-control" placeholder="Add a note..." name="note-input">
+                <input type="text" id="note-input" class="form-control" placeholder="Add a note...">
             </div>
 
             <hr class="border border-white border-1">
@@ -75,18 +67,18 @@
 </div>
 
 <script>
-
-const ORDER_ID = {{ order.id }};
+const TABLE_ID = {{ table_id }};
 const CSRF_TOKEN = "{{ csrf_token }}";
+let ORDER_ID = null;
 
 function apiPost(url, body) {
     return fetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": CSRF_TOKEN,   // SessionAuthentication, not JWT
+            "X-CSRFToken": CSRF_TOKEN,
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body || {})
     }).then(res => res.json());
 }
 
@@ -131,28 +123,44 @@ function refreshBill(data) {
     });
 }
 
-document.querySelectorAll(".category-row").forEach(row => {
-    row.addEventListener("click", function () {
-        apiGet(`/api/menu-items/?category=${this.dataset.id}`)
-        .then(data => {
-            let tbody = document.getElementById("items-body");
-            tbody.innerHTML = "";
-            data.forEach(item => {
-                let variants = item.variants.map(v =>
-                    `<button class="btn btn-sm btn-outline-success variant-btn m-1" data-variant-id="${v.id}">${v.size_display} - ₹${v.price}</button>`
-                ).join("");
-                tbody.innerHTML += `
-                    <div class="card hover-card m-1" style="width:30%;">
-                        <div class="card-header text-center fw-bold">${item.name}</div>
-                        <div class="card-body text-center">${variants}</div>
-                    </div>`;
-            });
-            document.querySelectorAll(".variant-btn").forEach(btn => {
-                btn.onclick = () => apiPost(`/api/orders/${ORDER_ID}/add-item/`, { variant_id: btn.dataset.variantId }).then(refreshBill);
+function loadCategories() {
+    apiGet('/api/categories/').then(data => {
+        const categories = data.results || data;
+        const tbody = document.getElementById('category-rows');
+        tbody.innerHTML = "";
+        categories.forEach(cat => {
+            tbody.innerHTML += `<tr class="category-row" data-id="${cat.id}" style="cursor:pointer;"><td>${cat.name}</td></tr>`;
+        });
+
+        document.querySelectorAll(".category-row").forEach(row => {
+            row.addEventListener("click", function () {
+                loadItemsForCategory(this.dataset.id);
             });
         });
     });
-});
+}
+
+function loadItemsForCategory(categoryId) {
+    apiGet(`/api/menu-items/?category=${categoryId}&active_only=true`)
+    .then(data => {
+        const items = data.results || data;
+        let tbody = document.getElementById("items-body");
+        tbody.innerHTML = "";
+        items.forEach(item => {
+            let variants = item.variants.map(v =>
+                `<button class="btn btn-sm btn-outline-success variant-btn m-1" data-variant-id="${v.id}">${v.size_display} - ₹${v.price}</button>`
+            ).join("");
+            tbody.innerHTML += `
+                <div class="card hover-card m-1" style="width:30%;">
+                    <div class="card-header text-center fw-bold">${item.name}</div>
+                    <div class="card-body text-center">${variants}</div>
+                </div>`;
+        });
+        document.querySelectorAll(".variant-btn").forEach(btn => {
+            btn.onclick = () => apiPost(`/api/orders/${ORDER_ID}/add-item/`, { variant_id: btn.dataset.variantId }).then(refreshBill);
+        });
+    });
+}
 
 document.querySelectorAll(".payment-btn").forEach(btn => {
     btn.onclick = function () {
@@ -165,19 +173,18 @@ document.querySelectorAll(".payment-btn").forEach(btn => {
             if (data.error) {
                 document.getElementById("bill-error").innerText = data.error;
             } else {
-                window.location.href = "/orders";
+                window.location.href = "/orders/";
             }
         });
     };
 });
 
-refreshBill({
-    items: [
-        {% for oi in order.items.all %}
-        { id: {{ oi.id }}, item_name: "{{ oi.variant.item.name|escapejs }}", size_display: "{{ oi.variant.get_size_display }}", quantity: {{ oi.quantity }}, subtotal: {{ oi.subtotal }} },
-        {% endfor %}
-    ],
-    total: {{ order.total|default:0 }}
+// Bootstrap: open/reuse the order for this table, then load everything else
+apiPost(`/api/tables/${TABLE_ID}/order/`).then(order => {
+    ORDER_ID = order.id;
+    document.getElementById('table-no-label').innerText = order.table_no;
+    refreshBill(order);
+    loadCategories();
 });
 </script>
 {% endblock body %}

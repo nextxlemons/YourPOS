@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Manage Items{% endblock title %}
+{% block title %}Add Item{% endblock title %}
 {% block body %}
 <hr class="border border-light border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
-    <h5>+Add New Item</h5>
+    <h5>+ Add New Item</h5>
     <a class="btn btn-light" href="/manageitems">Back</a>
 </div>
 <hr class="border border-light border-1">
@@ -14,67 +14,125 @@
     <div class="card shadow-sm">
         <div class="card-body p-4">
             <h4 class="form-label fw-semibold">Please Enter Details.</h4>
-                <hr class="border border-dark border-1 opacity-50">
-            <form method="POST">
-                {% csrf_token %}
+            <hr class="border border-dark border-1 opacity-50">
+
+            <div id="form-error" class="text-danger mb-2"></div>
+
+            <form id="additem-form">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Item Name</label>
-                    <input type="text" name="name" class="form-control" placeholder="e.g. Mix Veg Pizza" required>
+                    <input type="text" id="name" class="form-control" placeholder="e.g. Mix Veg Pizza" required>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Category</label>
-                    <select name="category" class="form-select" required>
+                    <select id="category" class="form-select" required>
                         <option value="">-- Select Category --</option>
-                        {% for cat in categories %}
-                        <option value="{{ cat.id }}">{{ cat.name }}</option>
-                        {% endfor %}
                     </select>
                 </div>
 
                 <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="hasVariants" name="has_variants">
+                    <input type="checkbox" class="form-check-input" id="hasVariants">
                     <label class="form-check-label fw-semibold" for="hasVariants">Has size variants (S / L)</label>
                 </div>
 
                 <div class="mb-3" id="basePriceSection">
                     <label class="form-label fw-semibold">Base Price (₹)</label>
-                    <input type="number" name="variant_price_d" class="form-control" placeholder="0.00" step="0.01" min="0">
-                </div>                
+                    <input type="number" id="variant_price_d" class="form-control" placeholder="0.00" step="0.01" min="0">
+                </div>
 
                 <div class="mb-3 d-none" id="variantSection">
                     <label class="form-label fw-semibold">Variants</label>
                     <div class="d-flex gap-2 mb-2">
                         <label class="form-label w-auto my-auto">Small</label>
-                        <input type="number" name="variant_price_s" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
+                        <input type="number" id="variant_price_s" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
                     </div>
                     <div class="d-flex gap-2">
                         <label class="form-label w-auto my-auto">Large</label>
-                        <input type="number" name="variant_price_l" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
+                        <input type="number" id="variant_price_l" class="form-control" placeholder="Price (₹)" step="0.01" min="0">
                     </div>
                 </div>
 
                 <div class="mb-4 form-check">
-                    <input type="checkbox" class="form-check-input" id="isActive" name="is_active" checked>
+                    <input type="checkbox" class="form-check-input" id="isActive" checked>
                     <label class="form-check-label fw-semibold" for="isActive">Active</label>
                 </div>
 
                 <button type="submit" class="btn btn-primary px-4">Save Item</button>
-                <a href="{% url 'manageitems' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                <a href="/manageitems" class="btn btn-outline-secondary ms-2">Cancel</a>
             </form>
         </div>
     </div>
     </div>
-
-<script>
-    document.getElementById('hasVariants').addEventListener('change', function () {
-        document.getElementById('basePriceSection').classList.toggle('d-none', this.checked);
-        document.getElementById('variantSection').classList.toggle('d-none', !this.checked);
-    });
-</script>
-
-
 </div>
 
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
 
+function apiGet(url) {
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json());
+}
+function apiPost(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(body || {})
+    }).then(res => res.json().then(data => ({ ok: res.ok, data })));
+}
+
+// Load categories into the dropdown
+apiGet('/api/categories/').then(data => {
+    const categories = data.results || data;
+    const select = document.getElementById('category');
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        select.appendChild(opt);
+    });
+});
+
+// Toggle base price vs variant price sections
+document.getElementById('hasVariants').addEventListener('change', function () {
+    document.getElementById('basePriceSection').classList.toggle('d-none', this.checked);
+    document.getElementById('variantSection').classList.toggle('d-none', !this.checked);
+});
+
+// submit new item 
+document.getElementById('additem-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const errorBox = document.getElementById('form-error');
+    errorBox.innerText = "";
+
+    const hasVariants = document.getElementById('hasVariants').checked;
+
+    const payload = {
+        name: document.getElementById('name').value.trim(),
+        category: document.getElementById('category').value,
+        has_variants: hasVariants,
+        is_active: document.getElementById('isActive').checked,
+    };
+
+    if (hasVariants) {
+        payload.variant_price_s = document.getElementById('variant_price_s').value;
+        payload.variant_price_l = document.getElementById('variant_price_l').value;
+    } else {
+        payload.variant_price_d = document.getElementById('variant_price_d').value;
+    }
+
+    if (!payload.category) {
+        errorBox.innerText = "Please select a category.";
+        return;
+    }
+
+    apiPost('/api/menu-items/create/', payload).then(({ ok, data }) => {
+        if (ok) {
+            window.location.href = "/manageitems";
+        } else {
+            errorBox.innerText = data.error || "Failed to save item.";
+        }
+    });
+});
+</script>
 {% endblock body %}
