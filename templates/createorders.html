@@ -172,7 +172,9 @@ document.querySelectorAll(".payment-btn").forEach(btn => {
         .then(data => {
             if (data.error) {
                 document.getElementById("bill-error").innerText = data.error;
+                showMessage(data.error, 'danger');
             } else {
+                sessionStorage.setItem('flash_message', `Order settled. Bill Number: ${data.bill_number}`);
                 window.location.href = "/orders/";
             }
         });
@@ -185,6 +187,17 @@ apiPost(`/api/tables/${TABLE_ID}/order/`).then(order => {
     document.getElementById('table-no-label').innerText = order.table_no;
     refreshBill(order);
     loadCategories();
+});
+
+apiPost(`/api/orders/${ORDER_ID}/settle/`, { payment_method: this.dataset.method, note: note })
+.then(data => {
+    if (data.error) {
+        document.getElementById("bill-error").innerText = data.error;
+        showMessage(data.error, 'danger');
+    } else {
+        showMessage(`Order settled. Bill Number: ${data.bill_number}`);
+        window.location.href = "/orders/";
+    }
 });
 </script>
 {% endblock body %}
