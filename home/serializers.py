@@ -55,6 +55,7 @@ class TableInfoSerializer(serializers.ModelSerializer):
         fields = ['id', 'table_no', 'status', 'status_display']
 
 
+
 class OrderItemSerializer(serializers.ModelSerializer):
     item_name = serializers.CharField(source='variant.item.name', read_only=True)
     size_display = serializers.CharField(source='variant.get_size_display', read_only=True)

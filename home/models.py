@@ -154,6 +154,6 @@ class Bill(models.Model):
 
     def __str__(self):
         return self.bill_number
-
+    
     class Meta:
-            unique_together = ('cafe', 'bill_number')  # bill numbers reset per café, not globally unique anymore
+        unique_together = ('cafe', 'bill_number')  # bill numbers reset per café, not globally unique anymore

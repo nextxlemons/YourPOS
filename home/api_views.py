@@ -176,7 +176,7 @@ class MenuItemListAPI(generics.ListAPIView):
     def get_queryset(self):
         qs = MenuItem.objects.filter(
             category__cafe=self.request.user.cafe
-        ).select_related('category').prefetch_related('variants').order_by('name')
+        ).select_related('category').prefetch_related('variants').order_by('category')
 
         category_id = self.request.query_params.get('category')
         if category_id:
@@ -348,10 +348,11 @@ class UpdateOrderItemAPI(APIView):
 # ---------- Billing ----------
 
 def generate_bill_number(cafe, table_no):
-    """Bill numbers are unique per cafe, not globally."""
+    """Bill numbers are unique per cafe."""
+    
     today = timezone.now()
     count_today = Bill.objects.filter(cafe=cafe, created_at__date=today.date()).count() + 1
-    return f"{table_no:02d}{count_today:04d}{today.day:02d}{today.month:02d}"
+    return f"C{cafe.id}{table_no:02d}{count_today:04d}{today.day:02d}{today.month:02d}" 
 
 
 class SettleOrderAPI(APIView):

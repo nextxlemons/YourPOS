@@ -82,7 +82,15 @@ function renderMenuItems(menuitems) {
 
 function deleteItem(id, name) {
     if (!confirm(`Delete ${name}?`)) return;
-    apiPost(`/api/menu-items/${id}/delete/`).then(() => loadMenuItems());
+    apiPost(`/api/menu-items/${id}/delete/`).then(data => {
+        if(data.error) {
+            showMessage(data.error, 'danger')
+            return;
+        }
+        showMessage(`Item '${name}' deleted successfully.`)
+
+        loadMenuItems();
+    });
 }
 
 loadMenuItems();

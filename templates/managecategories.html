@@ -22,10 +22,13 @@
 <div class="modal fade" id="addCategoryModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
+
       <div class="modal-header">
         <h5 class="modal-title">Add New Category</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+      <div id="form-error" class="alert alert-danger d-none"></div>
+
       <div class="modal-body">
         <input type="text" id="new-category-name" class="form-control" placeholder="Enter category name">
       </div>
@@ -86,7 +89,13 @@ function toggleEdit(id) {
 
 function renameCategory(id) {
     const newName = document.getElementById('rename-input-' + id).value;
-    apiPost(`/api/categories/${id}/update/`, { name: newName }).then(loadCategories);
+    apiPost(`/api/categories/${id}/update/`, { name: newName}).then(data => {
+        if (data.error) {
+            showMessage(data.error, 'danger')
+        }
+        showMessage(`Category Rename ${name} to '${newName}'`);
+        loadCategories();
+    });
 }
 
 
@@ -103,10 +112,16 @@ function deleteCategory(id, name) {
 }
 document.getElementById('confirm-add-category').addEventListener('click', function () {
     const name = document.getElementById('new-category-name').value.trim();
+    const errorBox = document.getElementById('form-error');
+    errorBox.classList.add('d-none');
+
     if (!name) return;
     apiPost('/api/categories/create/', { name }).then(data => {
+
         if (data.error) {
             showMessage(data.error, 'danger');
+            errorBox.innerText = data.error || "Unable to Add Category.";
+            errorBox.classList.remove('d-none');
             return;
         }
         showMessage(`Category '${data.name}' added successfully.`);

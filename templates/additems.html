@@ -126,13 +126,16 @@ document.getElementById('additem-form').addEventListener('submit', function (e) 
         return;
     }
 
+
     apiPost('/api/menu-items/create/', payload).then(({ ok, data }) => {
         if (ok) {
+            showMessage(`Item Added`);
             window.location.href = "/manageitems";
         } else {
-            errorBox.innerText = data.error || "Failed to save item.";
+            showMessage(data.error, 'danger')
         }
-    });
+    });    
+
 });
 </script>
 {% endblock body %}

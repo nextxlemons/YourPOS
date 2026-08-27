@@ -58,11 +58,12 @@ function renderTables(tables) {
         const statusClass = t.status === 'A' ? 'text-success' : 'text-danger';
         grid.innerHTML += `
             <div class="card d-inline-flex m-1 hover-card">
-                <a href="/createorders/${t.table_no}/">
+                <a href="/createorders/${t.id}/">
                     <div class="card-header">Table : ${t.table_no}</div>
                     <div class="card-body ${statusClass}">${t.status_display}</div>
                 </a>
             </div>`;
+            
     });
 }
 
