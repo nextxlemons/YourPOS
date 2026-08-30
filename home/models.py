@@ -4,10 +4,7 @@ from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
 
-# table to show status of all tables 
-
 # table for user of cafe
-
 class Cafe(models.Model):
     owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cafe')
     name = models.CharField(max_length=150)
@@ -65,7 +62,6 @@ class MenuItem(models.Model):
     def __str__(self):
         return f"{self.name} - {self.category.name}"
 
-
 #  size of items Large or Small and default price of items
 class MenuVariant(models.Model):
     class Size(models.TextChoices):
@@ -115,7 +111,6 @@ class Order(models.Model):
         return sum(oi.subtotal for oi in self.items.all())
     
 
-
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     variant = models.ForeignKey(MenuVariant, on_delete=models.PROTECT)
@@ -131,7 +126,6 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.variant} x {self.quantity}"
     
-
 
 class Bill(models.Model):
     class PaymentMethod(models.TextChoices):

@@ -16,6 +16,21 @@ from .serializers import (
 
 # ---------- Signup / Auth ----------
 
+class SignupAPI(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        user = result['user']
+
+        login(request, user)  # establishes the session cookie, same as template login_view
+
+        return Response({
+            'cafe_name': result['cafe'].name,
+            'username': user.username,
+        }, status=status.HTTP_201_CREATED)
 
 
 class LoginAPI(APIView):
@@ -35,58 +50,12 @@ class LoginAPI(APIView):
         login(request, user)
         return Response({'cafe_name': user.cafe.name, 'username': user.username})
 
-
 class LogoutAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         logout(request)
         return Response({'success': True})
-
-class SignupAPI(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        serializer = SignupSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        result = serializer.save()
-        user = result['user']
-
-        login(request, user)  # establishes the session cookie, same as your template login_view
-
-        return Response({
-            'cafe_name': result['cafe'].name,
-            'username': user.username,
-        }, status=status.HTTP_201_CREATED)
-
-
-
-# ---------- Login / Logout ----------
-
-class LoginAPI(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        username = request.data.get('username', '').strip()
-        password = request.data.get('password', '')
-
-        user = authenticate(request, username=username, password=password)
-        if user is None:
-            return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
-        if not hasattr(user, 'cafe'):
-            return Response({'error': "This account isn't linked to a café"}, status=status.HTTP_403_FORBIDDEN)
-
-        login(request, user)
-        return Response({'cafe_name': user.cafe.name, 'username': user.username})
-
-
-class LogoutAPI(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        logout(request)
-        return Response({'success': True})
-
 
 class SessionStatusAPI(APIView):
     """Lets the frontend check 'am I logged in, and to which cafe' on page load if needed."""
@@ -108,7 +77,6 @@ class TableListAPI(generics.ListAPIView):
 
 
 class TableCreateAPI(APIView):
-    """Auto-increments table_no per cafe — matches the template-based `orders` view's behavior."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
