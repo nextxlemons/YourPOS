@@ -66,6 +66,10 @@ def orderhistory(request):
 
 
 @cafe_login_required
+def profile(request):
+    return render(request,'profile.html')
+
+@cafe_login_required
 def settings(request):
     return render(request, 'settings.html')
 

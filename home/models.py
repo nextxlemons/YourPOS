@@ -5,14 +5,19 @@ from django.db import models
 from django.contrib.auth.models import User
 
 # table for user of cafe
+
 class Cafe(models.Model):
     owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cafe')
     name = models.CharField(max_length=150)
-    address = models.CharField(max_length=255, blank=True)
+    address = models.CharField(max_length=250, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    gstin = models.CharField(max_length=20, blank=True)
+    profile_picture = models.ImageField(upload_to='static/cafe_profiles/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
 #all tables in cafe 
 class TableInfo(models.Model):
     class Status(models.TextChoices):

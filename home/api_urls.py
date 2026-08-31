@@ -8,6 +8,8 @@ urlpatterns = [
     path('auth/logout/', api_views.LogoutAPI.as_view(), name='api-logout'),
     path('auth/status/', api_views.SessionStatusAPI.as_view(), name='api-status'),
 
+    # profile and settings
+
 
     # Tables
     path('tables/', api_views.TableListAPI.as_view(), name='api-tables'),
@@ -37,4 +39,7 @@ urlpatterns = [
     path('bills/', api_views.BillListAPI.as_view(), name='api-bills'),
     path('bills/<int:pk>/', api_views.BillDetailAPI.as_view(), name='api-bill-detail'),
     path('reports/sales/', api_views.SalesReportAPI.as_view(), name='api-sales-report'),
+
+    # profile 
+    path('profile/',api_views.ProfileAPI.as_view(), name='api-profile')
 ]

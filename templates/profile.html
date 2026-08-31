@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock title %}
+{% block body %}
+
+<hr class="border border-light border-1">
+<div class="container-fluid d-flex justify-content-between align-items-center px-4">
+    <h5>Profile</h5>
+</div>
+<hr class="border border-white border-1">
+
+
+<div class="container-fluid px-4">
+    <table class="table table-primary table-bordered table-striped">
+        <thead><tr><th>Owner</th><th>Name</th><th>Adress</th><th>Phone Number</th><th>Gstin</th><th>Created_at</th></tr></thead>
+        <tbody id="profile-rows"></tbody>
+    </table>
+</div>
+
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function apiGet(url) {
+    return fetch(url, { headers: {'X-CSRFToken': CSRF_TOKEN } }).then(r =>r.json());
+}
+
+function renderProfile(profile) {
+    const tbody = document.getElementById('profile-rows');
+    tbody.innerHTML = "";
+
+    if (!profile || !profile.name) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted">
+                    No Profile Info
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = `
+        <tr>
+            <td>${profile.name || ''}</td>
+            <td>${profile.address || ''}</td>
+            <td>${profile.phone_number || ''}</td>
+            <td>${profile.gstin || ''}</td>
+            <td>${profile.profile_picture || ''}</td>
+            <td>${profile.created_at || ''}</td>
+        </tr>
+    `;
+}
+
+function loadProfile() {
+    apiGet('/api/profile/').then(data => renderProfile(data.results || data));
+}
+
+loadProfile();
+</script>
+
+{% endblock body %}

@@ -7,9 +7,9 @@ from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order, OrderItem, Bill
+from .models import Cafe, TableInfo, MenuCategory, MenuItem, MenuVariant, Order, OrderItem, Bill
 from .serializers import (
-    SignupSerializer, TableInfoSerializer, MenuCategorySerializer,
+    CafeSerializer, SignupSerializer, TableInfoSerializer, MenuCategorySerializer,
     MenuItemSerializer, OrderSerializer, BillSerializer,
 )
 
@@ -400,3 +400,12 @@ class SalesReportAPI(APIView):
         })
 
 
+class ProfileAPI(APIView):
+    serializer_class = CafeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self,request):
+        cafe = Cafe.objects.get(owner=request.user)
+        res = CafeSerializer(cafe, context={'request': request})
+
+        return Response(res.data)

@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from .models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order, OrderItem, Bill
+from .models import Cafe,TableInfo, MenuCategory, MenuItem, MenuVariant, Order, OrderItem, Bill
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import Cafe
 
 class SignupSerializer(serializers.Serializer):
     cafe_name = serializers.CharField(max_length=150)
@@ -23,6 +22,19 @@ class SignupSerializer(serializers.Serializer):
         )
         cafe = Cafe.objects.create(owner=user, name=validated_data['cafe_name'])
         return {'user': user, 'cafe': cafe}
+
+class CafeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cafe
+        fields = [
+            'id',
+            'name',
+            'address',
+            'phone_number',
+            'gstin',
+            'profile_picture',
+            'created_at',
+        ]
 
 class MenuVariantSerializer(serializers.ModelSerializer):
     size_display = serializers.CharField(source='get_size_display', read_only=True)
