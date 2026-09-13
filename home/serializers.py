@@ -19,6 +19,7 @@ class SignupSerializer(serializers.Serializer):
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
+            first_name=self.validated_data['cafe_name'] 
         )
         cafe = Cafe.objects.create(owner=user, name=validated_data['cafe_name'])
         return {'user': user, 'cafe': cafe}

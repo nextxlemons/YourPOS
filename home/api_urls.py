@@ -8,8 +8,6 @@ urlpatterns = [
     path('auth/logout/', api_views.LogoutAPI.as_view(), name='api-logout'),
     path('auth/status/', api_views.SessionStatusAPI.as_view(), name='api-status'),
 
-    # profile and settings
-
 
     # Tables
     path('tables/', api_views.TableListAPI.as_view(), name='api-tables'),
@@ -42,4 +40,6 @@ urlpatterns = [
 
     # profile 
     path('profile/',api_views.ProfileAPI.as_view(), name='api-profile')
+
+    # profile and settings
 ]

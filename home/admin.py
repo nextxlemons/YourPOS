@@ -3,13 +3,15 @@ from home.models import TableInfo, MenuCategory, MenuItem, MenuVariant, Order, O
 # Register your models here.
 
 admin.site.register(Cafe)
-# admin can not access this tables
 
 
-# admin.site.register(TableInfo)
-# admin.site.register(MenuCategory)
-# admin.site.register(MenuItem)
-# admin.site.register(MenuVariant)
-# admin.site.register(Order)
-# admin.site.register(OrderItem)
-# admin.site.register(Bill)
+# admin can not access this tables if comments
+
+
+admin.site.register(TableInfo)
+admin.site.register(MenuCategory)
+admin.site.register(MenuItem)
+admin.site.register(MenuVariant)
+admin.site.register(Order)
+admin.site.register(OrderItem)
+admin.site.register(Bill)

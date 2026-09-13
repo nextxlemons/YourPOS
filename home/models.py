@@ -18,6 +18,7 @@ class Cafe(models.Model):
     def __str__(self):
         return self.name
 
+
 #all tables in cafe 
 class TableInfo(models.Model):
     class Status(models.TextChoices):

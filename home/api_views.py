@@ -45,7 +45,7 @@ class LoginAPI(APIView):
             return Response({'error': 'Invalid username or password.'}, status=status.HTTP_401_UNAUTHORIZED)
 
         if not hasattr(user, 'cafe'):
-            return Response({'error': "This account isn't linked to a café."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': "Try again."}, status=status.HTTP_403_FORBIDDEN)
 
         login(request, user)
         return Response({'cafe_name': user.cafe.name, 'username': user.username})
@@ -398,6 +398,15 @@ class SalesReportAPI(APIView):
             'weekly': agg(Bill.objects.filter(cafe=cafe, created_at__date__gte=week_start)),
             'monthly': agg(Bill.objects.filter(cafe=cafe, created_at__date__gte=month_start)),
         })
+
+
+class ExportBillsAPI(APIView):
+    def get(self, request):
+        start = request.query_params.get('start')  # YYYY-MM-DD
+        end = request.query_params.get('end')
+        bills = Bill.objects.filter(cafe=request.user.cafe, created_at__date__range=[start, end])
+        # build CSV with Python's csv module, return as HttpResponse with
+        # Content-Type: text/csv and Content-Disposition: attachment
 
 
 class ProfileAPI(APIView):
