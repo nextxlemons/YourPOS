@@ -1,60 +1,197 @@
 {% extends "base.html" %}
 {% block title %}Profile{% endblock title %}
 {% block body %}
-
 <hr class="border border-light border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
-    <h5>Profile</h5>
+    <h5>Café Profile</h5>
 </div>
 <hr class="border border-white border-1">
 
-
 <div class="container-fluid px-4">
-    <table class="table table-primary table-bordered table-striped">
-        <thead><tr><th>Owner</th><th>Name</th><th>Adress</th><th>Phone Number</th><th>Gstin</th><th>Created_at</th></tr></thead>
-        <tbody id="profile-rows"></tbody>
-    </table>
+    <div class="card bg-body-secondary text-dark shadow-sm">
+        <div class="card-body">
+            <div class="row">
+
+                <!-- Left: picture + username -->
+                <div class="col-md-3 text-center border-end">
+                    <img id="profile-pic" src="/static/img/logo.jpg" class="rounded-circle shadow-sm mb-2"
+                         style="width: 140px; height: 140px; object-fit: cover;" alt="Profile picture">
+                    <div class="mb-2">
+                        <input type="file" id="profile-pic-input" accept="image/*" class="form-control form-control-sm d-none">
+                        <button class="btn btn-sm btn-outline-dark d-none" id="change-pic-btn">Change Photo</button>
+                    </div>
+                    <h6 class="fw-bold mb-0" data-field="name">...</h6>
+                </div>
+
+                <!-- Right: editable fields -->
+                <div class="col-md-9">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-semibold mb-0">Café Details</h6>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="edit-btn">Edit</button>
+                            <button class="btn btn-sm btn-success d-none" id="save-btn">Save</button>
+                            <button class="btn btn-sm btn-outline-secondary d-none" id="cancel-btn">Cancel</button>
+                        </div>
+                    </div>
+
+                    <div id="form-error" class="text-danger mb-2"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Café Name</label>
+                            <span class="d-block field-view" data-field="name">—</span>
+                            <input type="text" class="form-control d-none field-edit" data-field="name">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phone Number</label>
+                            <span class="d-block field-view" data-field="phone_number">—</span>
+                            <input type="text" class="form-control d-none field-edit" data-field="phone_number">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Address</label>
+                            <span class="d-block field-view" data-field="address">—</span>
+                            <input type="text" class="form-control d-none field-edit" data-field="address">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">GSTIN / Tax ID</label>
+                            <span class="d-block field-view" data-field="gstin">—</span>
+                            <input type="text" class="form-control d-none field-edit" data-field="gstin">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Member Since</label>
+                            <span class="d-block" id="created-at-label">—</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
 const CSRF_TOKEN = "{{ csrf_token }}";
+let currentProfile = null;
 
 function apiGet(url) {
-    return fetch(url, { headers: {'X-CSRFToken': CSRF_TOKEN } }).then(r =>r.json());
+    return fetch(url, { headers: { 'X-CSRFToken': CSRF_TOKEN } }).then(r => r.json());
+}
+function apiPost(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(body || {})
+    }).then(res => res.json().then(data => ({ ok: res.ok, data })));
+}
+
+function formatDate(isoString) {
+    if (!isoString) return "—";
+    const d = new Date(isoString);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
 function renderProfile(profile) {
-    const tbody = document.getElementById('profile-rows');
-    tbody.innerHTML = "";
+    currentProfile = profile;
 
-    if (!profile || !profile.name) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center text-muted">
-                    No Profile Info
-                </td>
-            </tr>
-        `;
-        return;
+    document.getElementById('created-at-label').innerText = formatDate(profile.created_at);
+
+    if (profile.profile_picture) {
+        document.getElementById('profile-pic').src = profile.profile_picture;
     }
 
-    tbody.innerHTML = `
-        <tr>
-            <td>${profile.name || ''}</td>
-            <td>${profile.address || ''}</td>
-            <td>${profile.phone_number || ''}</td>
-            <td>${profile.gstin || ''}</td>
-            <td>${profile.profile_picture || ''}</td>
-            <td>${profile.created_at || ''}</td>
-        </tr>
-    `;
+    document.querySelectorAll('.field-view').forEach(el => {
+        const field = el.dataset.field;
+        el.innerText = profile[field] || '—';
+    });
+    document.querySelectorAll('.field-edit').forEach(el => {
+        const field = el.dataset.field;
+        el.value = profile[field] || '';
+    });
 }
 
 function loadProfile() {
-    apiGet('/api/profile/').then(data => renderProfile(data.results || data));
+    apiGet('/api/profile/').then(renderProfile);
 }
+
+function enterEditMode() {
+    document.querySelectorAll('.field-view').forEach(el => el.classList.add('d-none'));
+    document.querySelectorAll('.field-edit').forEach(el => el.classList.remove('d-none'));
+    document.getElementById('edit-btn').classList.add('d-none');
+    document.getElementById('save-btn').classList.remove('d-none');
+    document.getElementById('cancel-btn').classList.remove('d-none');
+    document.getElementById('change-pic-btn').classList.remove('d-none');
+}
+
+function exitEditMode() {
+    document.querySelectorAll('.field-view').forEach(el => el.classList.remove('d-none'));
+    document.querySelectorAll('.field-edit').forEach(el => el.classList.add('d-none'));
+    document.getElementById('edit-btn').classList.remove('d-none');
+    document.getElementById('save-btn').classList.add('d-none');
+    document.getElementById('cancel-btn').classList.add('d-none');
+    document.getElementById('change-pic-btn').classList.add('d-none');
+    document.getElementById('form-error').innerText = "";
+}
+
+document.getElementById('edit-btn').addEventListener('click', enterEditMode);
+
+document.getElementById('cancel-btn').addEventListener('click', function () {
+    renderProfile(currentProfile);  // discard unsaved edits
+    exitEditMode();
+});
+
+document.getElementById('change-pic-btn').addEventListener('click', function () {
+    document.getElementById('profile-pic-input').click();
+});
+
+document.getElementById('save-btn').addEventListener('click', function () {
+    const errorBox = document.getElementById('form-error');
+    errorBox.innerText = "";
+
+    const payload = {};
+    document.querySelectorAll('.field-edit').forEach(el => {
+        payload[el.dataset.field] = el.value.trim();
+    });
+
+    apiPost('/api/profile/update/', payload).then(({ ok, data }) => {
+        if (ok) {
+            showMessage('Profile updated successfully.');
+            renderProfile(data);
+            exitEditMode();
+        } else {
+            errorBox.innerText = data.error || 'Failed to update profile.';
+        }
+    });
+});
+
+// Profile picture upload — separate request since it's multipart, not JSON
+document.getElementById('profile-pic-input').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+
+    fetch('/api/profile/upload-picture/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: formData  // no Content-Type header — browser sets the multipart boundary automatically
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            showMessage(data.error, 'danger');
+            return;
+        }
+        document.getElementById('profile-pic').src = data.profile_picture;
+        showMessage('Profile picture updated.');
+    });
+});
 
 loadProfile();
 </script>
-
 {% endblock body %}

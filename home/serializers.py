@@ -27,15 +27,16 @@ class SignupSerializer(serializers.Serializer):
 class CafeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cafe
-        fields = [
-            'id',
-            'name',
-            'address',
-            'phone_number',
-            'gstin',
-            'profile_picture',
-            'created_at',
-        ]
+        fields = ['id', 'name', 'address', 'phone_number', 'gstin', 'profile_picture', 'created_at',]
+
+class CafeProfileSerializer(serializers.ModelSerializer):
+    # owner_username = serializers.CharField(source='owner.username', read_only=True)
+
+    class Meta:
+        model = Cafe
+        fields = ['name', 'address', 'phone_number', 'gstin', 'profile_picture', 'created_at']
+        read_only_fields = ['created_at']
+
 
 class MenuVariantSerializer(serializers.ModelSerializer):
     size_display = serializers.CharField(source='get_size_display', read_only=True)

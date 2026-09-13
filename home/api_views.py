@@ -1,4 +1,6 @@
 from rest_framework import generics, status, permissions
+from rest_framework.parsers import MultiPartParser, FormParser
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
@@ -9,7 +11,7 @@ from datetime import timedelta
 
 from .models import Cafe, TableInfo, MenuCategory, MenuItem, MenuVariant, Order, OrderItem, Bill
 from .serializers import (
-    CafeSerializer, SignupSerializer, TableInfoSerializer, MenuCategorySerializer,
+    CafeSerializer,CafeProfileSerializer, SignupSerializer, TableInfoSerializer, MenuCategorySerializer,
     MenuItemSerializer, OrderSerializer, BillSerializer,
 )
 
@@ -418,3 +420,36 @@ class ProfileAPI(APIView):
         res = CafeSerializer(cafe, context={'request': request})
 
         return Response(res.data)
+
+
+class CafeProfileAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(CafeProfileSerializer(request.user.cafe, context={'request': request}).data)
+
+
+class CafeProfileUpdateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        cafe = request.user.cafe
+        for field in ['name', 'address', 'phone_number', 'gstin']:
+            if field in request.data:
+                setattr(cafe, field, request.data[field])
+        cafe.save()
+        return Response(CafeProfileSerializer(cafe, context={'request': request}).data)
+
+
+class CafeProfilePictureAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        cafe = request.user.cafe
+        file = request.FILES.get('profile_picture')
+        if not file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        cafe.profile_picture = file
+        cafe.save()
+        return Response({'profile_picture': request.build_absolute_uri(cafe.profile_picture.url)})

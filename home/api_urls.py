@@ -39,7 +39,9 @@ urlpatterns = [
     path('reports/sales/', api_views.SalesReportAPI.as_view(), name='api-sales-report'),
 
     # profile 
-    path('profile/',api_views.ProfileAPI.as_view(), name='api-profile')
-
-    # profile and settings
+    path('profile/',api_views.ProfileAPI.as_view(), name='api-profile'),
+    # api_urls.py additions
+    path('profile/', api_views.CafeProfileAPI.as_view(), name='api-profile'),
+    path('profile/update/', api_views.CafeProfileUpdateAPI.as_view(), name='api-profile-update'),
+    path('profile/upload-picture/', api_views.CafeProfilePictureAPI.as_view(), name='api-profile-picture'),
 ]
