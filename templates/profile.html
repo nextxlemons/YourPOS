@@ -1,70 +1,71 @@
 {% extends "base.html" %}
 {% block title %}Profile{% endblock title %}
 {% block body %}
+
 <hr class="border border-light border-1">
 <div class="container-fluid d-flex justify-content-between align-items-center px-4">
     <h5>Café Profile</h5>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <button class="btn btn-light" id="edit-btn">Edit</button>
+            <button class="btn btn-success d-none" id="save-btn">Save</button>
+            <button class="btn btn-warning d-none" id="cancel-btn">Cancel</button>
+        </div>
+    </div>
 </div>
 <hr class="border border-white border-1">
 
-<div class="container-fluid px-4">
-    <div class="card bg-body-secondary text-dark shadow-sm">
-        <div class="card-body">
-            <div class="row">
+<div class="container-fluid">
+    <div class="card border-0 shadow-sm" style="border-radius: 16px;"> <!--background-color: #cbcbdd; -->
+        <div class="card-body p-4 p-md-5">
 
-                <!-- Left: picture + username -->
-                <div class="col-md-3 text-center border-end">
-                    <img id="profile-pic" src="/static/img/logo.jpg" class="rounded-circle shadow-sm mb-2"
-                         style="width: 140px; height: 140px; object-fit: cover;" alt="Profile picture">
-                    <div class="mb-2">
-                        <input type="file" id="profile-pic-input" accept="image/*" class="form-control form-control-sm d-none">
-                        <button class="btn btn-sm btn-outline-dark d-none" id="change-pic-btn">Change Photo</button>
-                    </div>
-                    <h6 class="fw-bold mb-0" data-field="name">...</h6>
+            <div id="form-error" class="alert alert-danger py-2 d-none"></div>
+
+            <div class="row g-4">
+
+                <!-- Left: picture -->
+                <div class="col-12 col-md-3 text-center">
+                    <img id="profile-pic" src="/static/img/logo.jpg"
+                         class="rounded-circle shadow-sm mb-3"
+                         style="width: 140px; height: 140px; object-fit: cover;"
+                         alt="Profile picture">
+                    <h6 class="fw-semibold mb-1" data-field="name">—</h6>
+                    <small class="text-muted d-block mb-2">Member since <span id="created-at-label">—</span></small>
+
+                    <input type="file" id="profile-pic-input" accept="image/*" class="form-control form-control-sm d-none">
+                    <button class="btn btn-sm btn-outline-dark d-none" id="change-pic-btn">
+                        Change Photo
+                    </button>
                 </div>
 
-                <!-- Right: editable fields -->
-                <div class="col-md-9">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-semibold mb-0">Café Details</h6>
-                        <div>
-                            <button class="btn btn-sm btn-outline-primary" id="edit-btn">Edit</button>
-                            <button class="btn btn-sm btn-success d-none" id="save-btn">Save</button>
-                            <button class="btn btn-sm btn-outline-secondary d-none" id="cancel-btn">Cancel</button>
-                        </div>
-                    </div>
+                <!-- Right: fields -->
+                <div class="col-12 col-md-9">
+                    <div class="row g-4">
 
-                    <div id="form-error" class="text-danger mb-2"></div>
-
-                    <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Café Name</label>
-                            <span class="d-block field-view" data-field="name">—</span>
+                            <label class="form-label fw-semibold text-secondary text-uppercase small mb-1">Café Name</label>
+                            <div class="field-view fs-6" data-field="name">—</div>
                             <input type="text" class="form-control d-none field-edit" data-field="name">
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Phone Number</label>
-                            <span class="d-block field-view" data-field="phone_number">—</span>
+                            <label class="form-label fw-semibold text-secondary text-uppercase small mb-1">Phone Number</label>
+                            <div class="field-view fs-6" data-field="phone_number">—</div>
                             <input type="text" class="form-control d-none field-edit" data-field="phone_number">
                         </div>
 
-                        <div class="col-md-12">
-                            <label class="form-label fw-semibold">Address</label>
-                            <span class="d-block field-view" data-field="address">—</span>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-secondary text-uppercase small mb-1">Address</label>
+                            <div class="field-view fs-6" data-field="address">—</div>
                             <input type="text" class="form-control d-none field-edit" data-field="address">
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">GSTIN / Tax ID</label>
-                            <span class="d-block field-view" data-field="gstin">—</span>
+                            <label class="form-label fw-semibold text-secondary text-uppercase small mb-1">GSTIN / Tax ID</label>
+                            <div class="field-view fs-6" data-field="gstin">—</div>
                             <input type="text" class="form-control d-none field-edit" data-field="gstin">
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Member Since</label>
-                            <span class="d-block" id="created-at-label">—</span>
-                        </div>
                     </div>
                 </div>
 
@@ -134,6 +135,7 @@ function exitEditMode() {
     document.getElementById('save-btn').classList.add('d-none');
     document.getElementById('cancel-btn').classList.add('d-none');
     document.getElementById('change-pic-btn').classList.add('d-none');
+    document.getElementById('form-error').classList.add('d-none');
     document.getElementById('form-error').innerText = "";
 }
 
@@ -150,6 +152,7 @@ document.getElementById('change-pic-btn').addEventListener('click', function () 
 
 document.getElementById('save-btn').addEventListener('click', function () {
     const errorBox = document.getElementById('form-error');
+    errorBox.classList.add('d-none');
     errorBox.innerText = "";
 
     const payload = {};
@@ -164,6 +167,7 @@ document.getElementById('save-btn').addEventListener('click', function () {
             exitEditMode();
         } else {
             errorBox.innerText = data.error || 'Failed to update profile.';
+            errorBox.classList.remove('d-none');
         }
     });
 });
